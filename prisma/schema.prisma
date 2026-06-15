@@ -1,12 +1,11 @@
-// Prisma schema for Google Maps Research / Lead Generation MVP
-// Database: SQLite
+// Prisma schema — PostgreSQL (Supabase)
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model User {

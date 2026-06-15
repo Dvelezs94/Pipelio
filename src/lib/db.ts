@@ -1,15 +1,36 @@
 import { PrismaClient } from "@prisma/client";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient;
+  pgPool: Pool;
+};
 
-function makePrisma() {
-  // Use default SQLite file at build time if DATABASE_URL is not set
-  const url = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
-  const adapter = new PrismaBetterSqlite3({ url });
+function makePool(): Pool {
+  const connectionString = process.env.DATABASE_URL ?? process.env.DIRECT_URL;
+  if (!connectionString) {
+    throw new Error(
+      "DATABASE_URL is not set. Add your Supabase connection string to .env (see .env.example)."
+    );
+  }
+  return new Pool({
+    connectionString,
+    max: 10,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
+    ssl: connectionString.includes("supabase.co") ? { rejectUnauthorized: false } : undefined,
+  });
+}
+
+function makePrisma(): PrismaClient {
+  const pool = globalForPrisma.pgPool ?? makePool();
+  if (!globalForPrisma.pgPool) globalForPrisma.pgPool = pool;
+
+  const adapter = new PrismaPg(pool);
   return new PrismaClient({
     adapter,
-    log: process.env.NODE_ENV === "development" ? ["query", "error", "warn"] : ["error"],
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 }
 

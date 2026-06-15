@@ -5,27 +5,38 @@ Production-ready MVP for **market research and lead generation**: search busines
 ## Stack
 
 - **Next.js 14** (App Router), TypeScript, TailwindCSS
-- **Prisma 7** + SQLite (+ `@prisma/adapter-better-sqlite3`)
+- **Prisma 7** + **PostgreSQL (Supabase)** + `@prisma/adapter-pg`
 - **Google APIs**: Geocoding, Places (Nearby + Details), Maps JavaScript
 - **SWR**, Shadcn-style UI (Radix + Tailwind), Server Actions
 
 ## Setup
 
-1. **Env**
+1. **Supabase project**
+
+   Create a project at [supabase.com](https://supabase.com). In **Project Settings → Database**, copy the **URI** (direct connection):
+
+   ```
+   postgresql://postgres:[PASSWORD]@db.mpeejubegtwpycpsetmf.supabase.co:5432/postgres?sslmode=require
+   ```
+
+2. **Env**
 
    Copy `.env.example` to `.env` and set:
 
-   - `GOOGLE_MAPS_API_KEY` – enable Geocoding API, Places API, Maps JavaScript API
-   - `DATABASE_URL` – SQLite file URL (e.g. `file:./prisma/dev.db`); optional, defaults to `file:./prisma/dev.db`
+   - `DATABASE_URL` – your Supabase URI (add `?sslmode=require` at the end)
+   - `AUTH_SECRET` – session signing secret
+   - `GOOGLE_MAPS_API_KEY` – optional, for map view
 
-2. **Database**
+   `DIRECT_URL` is optional; if omitted, Prisma migrations use `DATABASE_URL`.
+
+3. **Database**
 
    ```bash
-   npm run db:push
-   # or: npm run db:migrate
+   npm run db:migrate
+   # production: npm run db:deploy
    ```
 
-3. **Run**
+4. **Run**
 
    ```bash
    npm run dev
@@ -45,11 +56,11 @@ Production-ready MVP for **market research and lead generation**: search busines
 
 ## Project layout
 
-- `src/app/` – App Router: `/` (search), `/results/[id]` (dashboard), `/api/search`, `/api/search/[id]`, `/api/businesses`
-- `src/app/actions/` – Server actions: search, export
+- `src/app/` – App Router: `/` (search), `/results/[id]` (dashboard), `/api/search`, `/api/businesses`, `/crm`, `/db`
+- `src/app/actions/` – Server actions: search, export, CRM
 - `src/components/` – FiltersPanel, IndustryAccordion, BusinessTable, MapView; `ui/` for primitives
 - `src/lib/` – db, google-places, industry-classification, size-estimation, rate-limit, constants
-- `prisma/schema.prisma` – ZipSearch, Business
+- `prisma/schema.prisma` – PostgreSQL schema
 - **AGENTS.md** – Structure, scope, conventions (agents may update it)
 
 ## API

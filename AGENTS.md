@@ -6,7 +6,7 @@
 
 ## Project overview
 
-- **Stack:** Next.js 14 (App Router), TypeScript, TailwindCSS, Prisma (SQLite), Google Places + Geocoding + Maps JS API, SWR, Shadcn-style UI (Radix + Tailwind).
+- **Stack:** Next.js 14 (App Router), TypeScript, TailwindCSS, Prisma (PostgreSQL / Supabase), Google Places + Geocoding + Maps JS API, SWR, Shadcn-style UI (Radix + Tailwind).
 - **Goal:** Market research / lead generation: user enters a ZIP code, app returns businesses in that area, categorized by industry and estimated company size, with filters, table view, map, and export (CSV/JSON).
 
 ---
@@ -20,8 +20,8 @@
 | `src/components/` | UI: `FiltersPanel`, `IndustryAccordion`, `BusinessTable`, `MapView`; `ui/` for primitives (Button, Input, Card, Select, Checkbox, Accordion) |
 | `src/lib/` | Shared logic: `db.ts`, `utils.ts`, `constants.ts`, `industry-classification.ts`, `size-estimation.ts`, `google-places.ts`, `rate-limit.ts`, `agent.ts` (DeepSeek recommendation) |
 | `src/types/` | Shared TS types: `BusinessRecord`, `ZipSearchRecord`, `BusinessFilters` |
-| `prisma/schema.prisma` | Models: `ZipSearch`, `Business`, `CrmLead` (leads saved from search) |
-| `prisma.config.ts` | Prisma 7 config; `DATABASE_URL` is set here (not in schema) |
+| `prisma/schema.prisma` | Models: User, Workspace, ZipSearch, Business, CrmLead, … |
+| `prisma.config.ts` | Prisma 7 config; `DIRECT_URL` for CLI migrations, app uses `DATABASE_URL` (Supabase pooler) |
 
 ---
 
@@ -50,7 +50,8 @@
 
 - `GOOGLE_MAPS_API_KEY` – used for Geocoding, Places (Nearby + Text Search + Details), and Maps JavaScript API (map view).
 - `DEEPSEEK_API_KEY` – used for the chat agent (industry/location recommendations) and CRM cold email generation.
-- `DATABASE_URL` – SQLite file URL (e.g. `file:./prisma/dev.db`); read in `prisma.config.ts`.
+- `DATABASE_URL` – Supabase Postgres URI (direct connection, port 5432). See `.env.example`.
+- `DIRECT_URL` – optional; Prisma CLI falls back to `DATABASE_URL` if unset.
 
 See `.env.example` for a template.
 
