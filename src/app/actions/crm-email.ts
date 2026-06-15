@@ -1,6 +1,5 @@
 "use server";
 
-import type { CrmEmailRevision, CrmInboxMessage, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import {
@@ -146,9 +145,39 @@ export type CrmInboxRow = {
   receivedAt: Date;
 };
 
-type CrmEmailWithRevisionCount = Prisma.CrmEmailGetPayload<{
-  include: { _count: { select: { revisions: true } } };
-}>;
+type CrmEmailWithRevisionCount = {
+  id: string;
+  crmLeadId: string;
+  type: string;
+  channel: string;
+  language: string;
+  subject: string | null;
+  body: string;
+  recipient: string | null;
+  sentAt: Date | null;
+  sendStatus: string | null;
+  sendError: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  _count: { revisions: number };
+};
+
+type CrmEmailRevisionRecord = {
+  id: string;
+  subject: string | null;
+  body: string;
+  source: string;
+  createdAt: Date;
+};
+
+type CrmInboxMessageRecord = {
+  id: string;
+  fromEmail: string;
+  fromName: string | null;
+  subject: string | null;
+  bodyText: string | null;
+  receivedAt: Date;
+};
 
 /** Render a template for a lead without saving (for compose prefill). */
 export async function previewEmailTemplate(
@@ -589,9 +618,9 @@ export async function getCrmEmailRevisions(crmEmailId: string): Promise<CrmEmail
   const revs = (await prisma.crmEmailRevision.findMany({
     where: { crmEmailId },
     orderBy: { createdAt: "desc" },
-  })) as CrmEmailRevision[];
+  })) as CrmEmailRevisionRecord[];
 
-  return revs.map((r: CrmEmailRevision) => ({
+  return revs.map((r: CrmEmailRevisionRecord) => ({
     id: r.id,
     subject: r.subject,
     body: r.body,
@@ -605,9 +634,9 @@ export async function getCrmInboxForLead(crmLeadId: string): Promise<CrmInboxRow
     where: { crmLeadId },
     orderBy: { receivedAt: "desc" },
     take: 20,
-  })) as CrmInboxMessage[];
+  })) as CrmInboxMessageRecord[];
 
-  return rows.map((r: CrmInboxMessage) => ({
+  return rows.map((r: CrmInboxMessageRecord) => ({
     id: r.id,
     fromEmail: r.fromEmail,
     fromName: r.fromName,
