@@ -1,4 +1,4 @@
-// Prisma schema — PostgreSQL (Supabase)
+// Prisma schema — PostgreSQL (Supabase) · Pipelio
 
 generator client {
   provider = "prisma-client-js"

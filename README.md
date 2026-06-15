@@ -1,6 +1,6 @@
-# Business Research – Google Maps MVP
+# Pipelio
 
-Production-ready MVP for **market research and lead generation**: search businesses by ZIP code, view by industry and size, filter, export, and map view.
+Lead research and CRM for SaaS, software development, and internet companies. Search by industry, scrape listing sites, manage a pipeline, and run outreach from one app.
 
 ## Stack
 
@@ -16,7 +16,7 @@ Production-ready MVP for **market research and lead generation**: search busines
    Create a project at [supabase.com](https://supabase.com). In **Project Settings → Database**, copy the **URI** (direct connection):
 
    ```
-   postgresql://postgres:[PASSWORD]@db.mpeejubegtwpycpsetmf.supabase.co:5432/postgres?sslmode=require
+   postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres?sslmode=require
    ```
 
 2. **Env**
@@ -46,30 +46,27 @@ Production-ready MVP for **market research and lead generation**: search busines
 
 ## Features
 
-- **ZIP search**: Enter ZIP + radius (1 / 5 / 10 / 25 km) → Geocoding + Places Nearby + Place Details
-- **Industry**: Google types mapped to industries (Food & Beverage, Automotive, Healthcare, etc.) in `src/lib/industry-classification.ts`
-- **Size**: Heuristic (reviews, franchise hints) in `src/lib/size-estimation.ts`
-- **Results**: Grouped by industry → size (accordion), table (sort, search, pagination), map with markers
-- **Filters**: Industry, size, min rating, has website, has phone, text search
-- **Export**: CSV and JSON
-- **Bonus**: Domain from website, lead score, LinkedIn company search link
+- **Industry search**: Find SaaS, e-commerce, and dev shops via Product Hunt, YC, GitHub, Clutch
+- **Browser scraper extension**: Import leads from G2, Crunchbase, Product Hunt, and more
+- **CRM**: Track leads, send emails, sync inbox, manage templates
+- **Database**: All companies across searches; filter, sort, export
+- **Lead scoring**: Website, email, reviews, ratings
 
 ## Project layout
 
-- `src/app/` – App Router: `/` (search), `/results/[id]` (dashboard), `/api/search`, `/api/businesses`, `/crm`, `/db`
-- `src/app/actions/` – Server actions: search, export, CRM
-- `src/components/` – FiltersPanel, IndustryAccordion, BusinessTable, MapView; `ui/` for primitives
-- `src/lib/` – db, google-places, industry-classification, size-estimation, rate-limit, constants
+- `src/app/` – App Router: search, results, CRM, database, auth
+- `src/lib/brand.ts` – App name and taglines
+- `extension/` – Pipelio browser scraper (Chromium)
 - `prisma/schema.prisma` – PostgreSQL schema
-- **AGENTS.md** – Structure, scope, conventions (agents may update it)
+- **AGENTS.md** – Structure and conventions for agents
 
 ## API
 
-- `POST /api/search` – body: `{ zipCode, radiusKm }` → `{ searchId }` or `{ error }`
-- `GET /api/search/:id` – saved search + businesses
-- `GET /api/businesses` – query: `zipSearchId`, `industry`, `size`, `minRating`, `hasWebsite`, `hasPhone`, `search`, `page`, `limit`, `sortBy`, `sortOrder`
+- `POST /api/search` – industry search
+- `GET /api/businesses` – list/filter companies
+- `POST /api/scraper/import` – browser extension import (scraper API key)
 
 ## Rate limiting & caching
 
-- In-memory rate limit on search (see `src/lib/rate-limit.ts`). For production at scale, use Redis or similar.
-- Same ZIP + radius within 60 minutes reuses the last search (no new Places calls).
+- In-memory rate limit on search (see `src/lib/rate-limit.ts`).
+- Same industry + sources within 60 minutes reuses the last search.

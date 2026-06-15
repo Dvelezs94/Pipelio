@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { login } from "@/app/actions/auth";
+import { APP_NAME } from "@/lib/brand";
 import { Loader2, LogIn } from "lucide-react";
 
 export function LoginForm() {
@@ -40,7 +41,7 @@ export function LoginForm() {
           <LogIn className="h-6 w-6" />
           Sign in
         </CardTitle>
-        <CardDescription>Access your research workspace and CRM.</CardDescription>
+        <CardDescription>Sign in to your {APP_NAME} workspace.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">

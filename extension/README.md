@@ -1,6 +1,6 @@
-# Client Research Browser Scraper
+# Pipelio Browser Scraper
 
-Chromium extension (Chrome, Opera, Edge, Brave) that scrapes SaaS and software company listings and sends them to the Client Research app.
+Chromium extension (Chrome, Opera, Edge, Brave) that scrapes SaaS and software company listings and sends them to your Pipelio app.
 
 ## Supported sites
 
@@ -20,11 +20,11 @@ Chromium extension (Chrome, Opera, Edge, Brave) that scrapes SaaS and software c
 | [SoftwareSuggest](https://softwaresuggest.com) | `softwaresuggest` |
 | [GitHub](https://github.com/search?q=org&type=users) org search | `github` |
 
-Imported companies appear under **Database** (`/db`) grouped by browser extension source.
+Imported companies appear under **Database** (`/db`) in Pipelio, grouped by browser extension source.
 
 ## Server setup
 
-1. Add to your app `.env`:
+1. Add to your Pipelio `.env`:
 
 ```bash
 SCRAPER_API_KEY=your-long-random-secret
@@ -69,4 +69,4 @@ Click the extension icon → **Scrape this page now** on any supported tab.
 
 - Duplicate companies (same source + profile URL) are skipped automatically.
 - Site DOMs change often; if a site stops working, update selectors in `content/extractors.js`.
-- The extension sends data directly to your API using the scraper key (no app login required in the browser).
+- The extension sends data directly to your Pipelio API using the scraper key (no app login required in the browser).

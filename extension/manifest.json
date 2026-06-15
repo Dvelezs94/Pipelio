@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Client Research Scraper",
+  "name": "Pipelio Scraper",
   "version": "1.0.0",
-  "description": "Scrape SaaS and software company listings (Clutch, G2, Crunchbase, Product Hunt, YC, etc.) and send them to your Client Research app.",
+  "description": "Scrape SaaS and software company listings (Clutch, G2, Crunchbase, Product Hunt, YC, etc.) and send them to your Pipelio pipeline.",
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": [
     "http://localhost/*",
@@ -13,7 +13,7 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "Client Research Scraper",
+    "default_title": "Pipelio Scraper",
     "default_popup": "popup/popup.html"
   },
   "content_scripts": [

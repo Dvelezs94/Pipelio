@@ -145,7 +145,7 @@ export async function fetchPageEmails(url: URL, domain: string | null): Promise<
     const res = await fetch(url.toString(), {
       signal: controller.signal,
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; UptinioResearch/1.0; +email-research)",
+        "User-Agent": "Mozilla/5.0 (compatible; Pipelio/1.0; +email-research)",
         Accept: "text/html",
       },
       redirect: "follow",

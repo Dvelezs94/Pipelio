@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { register } from "@/app/actions/auth";
+import { APP_NAME } from "@/lib/brand";
 import { Loader2, UserPlus } from "lucide-react";
 
 export function RegisterForm() {
@@ -44,7 +45,7 @@ export function RegisterForm() {
           <UserPlus className="h-6 w-6" />
           Create account
         </CardTitle>
-        <CardDescription>Register to start researching companies and managing leads.</CardDescription>
+        <CardDescription>Create your {APP_NAME} account to research leads and manage outreach.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">

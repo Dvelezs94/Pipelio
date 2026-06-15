@@ -1,4 +1,4 @@
-# Agent guide: Business Research (Google Maps) MVP
+# Agent guide: Pipelio
 
 **Purpose:** This file describes project structure, scope, and important conventions. **Agents and maintainers may update this file** as the codebase evolves (new features, refactors, or structural changes). Keep it accurate and concise.
 
@@ -6,8 +6,9 @@
 
 ## Project overview
 
+- **Product:** Pipelio — lead research and CRM for SaaS / software companies.
 - **Stack:** Next.js 14 (App Router), TypeScript, TailwindCSS, Prisma (PostgreSQL / Supabase), Google Places + Geocoding + Maps JS API, SWR, Shadcn-style UI (Radix + Tailwind).
-- **Goal:** Market research / lead generation: user enters a ZIP code, app returns businesses in that area, categorized by industry and estimated company size, with filters, table view, map, and export (CSV/JSON).
+- **Goal:** Market research / lead generation: search companies by industry, scrape listing sites, filter and export leads, manage outreach in CRM.
 
 ---
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { NavBar } from "@/components/NavBar";
 import { getCurrentUser } from "@/lib/auth";
+import { APP_DESCRIPTION, appTitle } from "@/lib/brand";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -16,8 +17,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Tech Company Research | Lead Generation",
-  description: "Find SaaS, e-commerce, and internet companies by industry for market research and lead generation",
+  title: appTitle(),
+  description: APP_DESCRIPTION,
 };
 
 export default async function RootLayout({

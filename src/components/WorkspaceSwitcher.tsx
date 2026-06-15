@@ -198,7 +198,7 @@ export function WorkspaceSwitcher() {
           <Input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="e.g. Uptinio, Acme Corp"
+            placeholder="e.g. Acme Corp, Solar Devs"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === "Enter") {

@@ -1,5 +1,5 @@
 /**
- * Background service worker: sends scraped batches to the Client Research API.
+ * Background service worker: sends scraped batches to the Pipelio API.
  */
 importScripts("config.js");
 

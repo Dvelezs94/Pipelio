@@ -72,7 +72,7 @@ export function ProposalSenderForm({ initial }: { initial: ProposalSenderRow | n
         </div>
         <div className="sm:col-span-2">
           <label className="text-sm font-medium text-muted-foreground block mb-1">Your website</label>
-          <AiTextField value={yourWebsite} onChange={setYourWebsite} context="company website URL" placeholder="https://uptinio.com" />
+          <AiTextField value={yourWebsite} onChange={setYourWebsite} context="company website URL" placeholder="https://yourcompany.com" />
         </div>
       </div>
 
@@ -84,7 +84,7 @@ export function ProposalSenderForm({ initial }: { initial: ProposalSenderRow | n
         <textarea
           value={aiDraftContext}
           onChange={(e) => setAiDraftContext(e.target.value)}
-          placeholder="e.g. We sell Uptinio, an uptime monitoring platform. Be consultative, not pushy. Mention we help SaaS teams catch outages before customers do. Keep under 120 words."
+          placeholder="e.g. We sell B2B SaaS for dev teams. Be consultative, not pushy. Mention how we help software companies scale outreach. Keep under 120 words."
           rows={5}
           className="w-full rounded-md border bg-background px-3 py-2 text-sm resize-y min-h-[100px]"
         />

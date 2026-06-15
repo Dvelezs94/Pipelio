@@ -3,7 +3,7 @@
  * Popup settings override these values at runtime (stored in chrome.storage.sync).
  */
 const EXTENSION_CONFIG = {
-  /** Base URL of your Client Research app (no trailing slash) */
+  /** Base URL of your Pipelio app (no trailing slash) */
   API_URL: "http://localhost:3000",
 
   /** Must match SCRAPER_API_KEY in the app's .env */

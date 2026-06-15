@@ -57,7 +57,7 @@
     try {
       return extractor.extract() || [];
     } catch (e) {
-      console.warn("[Client Research Scraper]", e);
+      console.warn("[Pipelio Scraper]", e);
       return [];
     }
   }
@@ -140,7 +140,7 @@
     injectStyles();
     const config = await getConfig();
     const extractor = globalThis.detectScraperExtractor?.();
-    showBadge(`CR Scraper: ${extractor?.label || "ready"}`);
+    showBadge(`Pipelio: ${extractor?.label || "ready"}`);
 
     if (config.autoScrape) {
       setTimeout(() => scrapeNow(false), 1200);

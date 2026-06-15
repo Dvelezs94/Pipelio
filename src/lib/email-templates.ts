@@ -59,18 +59,18 @@ export function unreplacedPlaceholders(text: string): string[] {
 
 export const DEFAULT_EMAIL_TEMPLATES = [
   {
-    name: "First contact – Uptinio intro",
+    name: "First contact – intro",
     type: "first_contact",
     channel: "email",
     language: "en",
-    subjectTemplate: "Keeping {{businessName}} online when it matters",
+    subjectTemplate: "Quick idea for {{businessName}}",
     bodyTemplate: `Hi {{businessName}} team,
 
 I noticed {{businessName}} in the {{industry}} space{{website}} and wanted to reach out briefly.
 
-We help internet companies monitor uptime, server health, and incidents in one place with Uptinio — so your team knows about problems before your users do.
+We work with software and internet companies on [your value proposition] — helping teams like yours [specific outcome].
 
-Would it be useful to see how teams like yours set up monitoring in a quick call?
+Would you be open to a short call to see if there's a fit?
 
 Best regards,
 {{yourName}}
