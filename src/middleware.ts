@@ -9,13 +9,6 @@ function isScraperApiRoute(pathname: string): boolean {
   return pathname.startsWith("/api/scraper");
 }
 
-function isScraperAuthorized(request: NextRequest): boolean {
-  const expected = process.env.SCRAPER_API_KEY?.trim();
-  if (!expected) return false;
-  const key = request.headers.get("x-scraper-key");
-  return key === expected;
-}
-
 function getSecret(): Uint8Array {
   const secret = process.env.AUTH_SECRET;
   return new TextEncoder().encode(secret ?? "dev-secret-change-me");
@@ -44,10 +37,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isScraperApiRoute(pathname)) {
-    if (isScraperAuthorized(request)) {
-      return NextResponse.next();
-    }
-    return NextResponse.json({ error: "Invalid or missing scraper API key." }, { status: 401 });
+    return NextResponse.next();
   }
 
   if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {

@@ -9,12 +9,24 @@ datasource db {
 }
 
 model User {
-  id           String      @id @default(cuid())
-  email        String      @unique
+  id           String          @id @default(cuid())
+  email        String          @unique
   name         String
   passwordHash String
-  createdAt    DateTime    @default(now())
+  createdAt    DateTime        @default(now())
   workspaces   Workspace[]
+  scraperApiKeys ScraperApiKey[]
+}
+
+model ScraperApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  keyPrefix  String
+  keyHash    String    @unique
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
 }
 
 model Workspace {

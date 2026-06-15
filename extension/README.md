@@ -1,72 +1,42 @@
 # Pipelio Browser Scraper
 
-Chromium extension (Chrome, Opera, Edge, Brave) that scrapes SaaS and software company listings and sends them to your Pipelio app.
+Chromium extension that scrapes SaaS and software company listings and sends them to your Pipelio app.
+
+## Setup
+
+### 1. Generate an API key in Pipelio
+
+1. Sign in to your Pipelio app.
+2. Go to **Extension** in the nav (or `/settings/extension`).
+3. Click **Generate API key** and copy the `plk_…` key (shown once).
+
+### 2. Configure the extension
+
+1. Open the extension popup.
+2. Enter your **App URL** (e.g. `https://your-app.vercel.app`).
+3. Paste your **API key**.
+4. Click **Connect** — your projects load in the dropdown.
+5. Select a **Project** (where scraped companies are saved).
+6. Click **Save**.
+
+Browse supported listing sites to auto-scrape, or use **Scrape this page now**.
 
 ## Supported sites
 
-| Site | Source key |
-|------|------------|
-| [Clutch](https://clutch.co) | `clutch` |
-| [Crunchbase](https://crunchbase.com) | `crunchbase` |
-| [G2](https://g2.com) | `g2` |
-| [Capterra](https://capterra.com) | `capterra` |
-| [Product Hunt](https://producthunt.com) | `product_hunt` |
-| [Y Combinator](https://ycombinator.com/companies) | `yc` |
-| [Wellfound](https://wellfound.com) / AngelList | `wellfound` |
-| [GoodFirms](https://goodfirms.co) | `goodfirms` |
-| [GetApp](https://getapp.com) | `getapp` |
-| [Software Advice](https://softwareadvice.com) | `software_advice` |
-| [Built In](https://builtin.com) | `builtin` |
-| [SoftwareSuggest](https://softwaresuggest.com) | `softwaresuggest` |
-| [GitHub](https://github.com/search?q=org&type=users) org search | `github` |
+Clutch · Crunchbase · G2 · Capterra · Product Hunt · Y Combinator · Wellfound · GoodFirms · GetApp · Software Advice · Built In · SoftwareSuggest · GitHub org search
 
-Imported companies appear under **Database** (`/db`) in Pipelio, grouped by browser extension source.
+## API (used by the extension)
 
-## Server setup
+All routes require header `x-scraper-key: plk_…` (your personal key).
 
-1. Add to your Pipelio `.env`:
-
-```bash
-SCRAPER_API_KEY=your-long-random-secret
-# Optional: default workspace when extension does not send one
-SCRAPER_WORKSPACE_ID=
-```
-
-2. Start the app (`npm run dev`).
-
-3. API endpoints (auth: `x-scraper-key` header):
-
-- `POST /api/scraper/import` — import scraped companies
-- `GET /api/scraper/status` — health check
-- `GET /api/scraper/workspaces` — list workspaces for setup
-
-## Extension setup
-
-1. Edit **`config.js`** in this folder:
-
-```javascript
-const EXTENSION_CONFIG = {
-  API_URL: "http://localhost:3000",
-  API_KEY: "your-long-random-secret",  // same as SCRAPER_API_KEY
-  WORKSPACE_ID: "",                    // optional
-  AUTO_SCRAPE: true,
-};
-```
-
-2. Load unpacked in **Opera** or **Chrome**:
-   - Opera: `opera://extensions` → Developer mode → **Load unpacked** → select this `extension/` folder
-   - Chrome: `chrome://extensions` → Developer mode → **Load unpacked**
-
-3. Open the extension popup to test the API connection and optionally pick a workspace.
-
-4. Browse any supported listing site — scraping starts automatically. A teal badge in the bottom-right shows progress.
-
-## Manual scrape
-
-Click the extension icon → **Scrape this page now** on any supported tab.
+| Route | Purpose |
+|-------|---------|
+| `GET /api/scraper/status` | Validate key |
+| `GET /api/scraper/workspaces` | List your projects |
+| `POST /api/scraper/import` | Import scraped companies (requires `workspaceId`) |
 
 ## Notes
 
-- Duplicate companies (same source + profile URL) are skipped automatically.
-- Site DOMs change often; if a site stops working, update selectors in `content/extractors.js`.
-- The extension sends data directly to your Pipelio API using the scraper key (no app login required in the browser).
+- Each API key is tied to your user account and only accesses your projects.
+- Revoke keys anytime from Pipelio → Extension settings.
+- Reload listing tabs after changing extension settings.

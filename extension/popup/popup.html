@@ -12,18 +12,17 @@
     </header>
 
     <section class="card">
-      <label for="apiUrl">App API URL</label>
-      <input id="apiUrl" type="url" placeholder="http://localhost:3000" />
+      <label for="apiUrl">App URL</label>
+      <input id="apiUrl" type="url" placeholder="https://your-pipelio-app.vercel.app" />
 
-      <label for="apiKey">Scraper API key</label>
-      <input id="apiKey" type="password" placeholder="SCRAPER_API_KEY from .env" autocomplete="off" />
+      <label for="apiKey">Your API key</label>
+      <input id="apiKey" type="password" placeholder="plk_… from Pipelio → Extension" autocomplete="off" />
+      <p class="hint muted small">Generate a key in Pipelio under Extension settings.</p>
 
-      <label for="workspaceId">Workspace ID (optional)</label>
-      <div class="row">
-        <input id="workspaceId" type="text" placeholder="Leave empty for server default" />
-        <button id="loadWorkspaces" type="button" class="secondary" title="Fetch workspaces">↻</button>
-      </div>
-      <select id="workspaceSelect" class="hidden"></select>
+      <label for="workspaceSelect">Project</label>
+      <select id="workspaceSelect" disabled>
+        <option value="">Connect to load projects…</option>
+      </select>
 
       <label class="checkbox">
         <input id="autoScrape" type="checkbox" checked />
@@ -31,8 +30,8 @@
       </label>
 
       <div class="actions">
-        <button id="save" type="button">Save settings</button>
-        <button id="test" type="button" class="secondary">Test API</button>
+        <button id="connect" type="button">Connect</button>
+        <button id="save" type="button" class="secondary">Save</button>
       </div>
     </section>
 
@@ -46,7 +45,7 @@
     <section class="card sites">
       <p class="label">Supported sites</p>
       <p class="muted small">
-        Clutch · Crunchbase · G2 · Capterra · Product Hunt · Y Combinator · Wellfound · GoodFirms · GetApp · Software Advice · Built In · SoftwareSuggest · GitHub org search
+        Clutch · Crunchbase · G2 · Capterra · Product Hunt · Y Combinator · Wellfound · GoodFirms · GetApp · Software Advice · Built In · SoftwareSuggest · GitHub
       </p>
     </section>
 

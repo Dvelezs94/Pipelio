@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Search", match: (path: string) => path === "/" || path.startsWith("/results") },
   { href: "/db", label: "Database", match: (path: string) => path.startsWith("/db") },
   { href: "/crm", label: "CRM", match: (path: string) => path.startsWith("/crm") },
+  { href: "/settings/extension", label: "Extension", match: (path: string) => path.startsWith("/settings") },
 ] as const;
 
 const AUTH_PATHS = ["/login", "/register"];

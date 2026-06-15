@@ -21,7 +21,7 @@ async function getSettings() {
 async function apiFetch(path, options = {}) {
   const settings = await getSettings();
   if (!settings.apiKey) {
-    return { ok: false, error: "API key not set. Edit extension/config.js or use the popup." };
+    return { ok: false, error: "API key not set. Generate one in Pipelio → Extension and paste it in the popup." };
   }
 
   const headers = {
@@ -48,15 +48,18 @@ async function apiFetch(path, options = {}) {
 
 async function sendBatch(payload) {
   const settings = await getSettings();
+  const workspaceId = payload.workspaceId || settings.workspaceId;
+  if (!workspaceId) {
+    return { ok: false, error: "No project selected. Open the extension popup and choose a project." };
+  }
+
   const body = {
     source: payload.source,
     pageUrl: payload.pageUrl,
     searchLabel: payload.searchLabel,
+    workspaceId,
     companies: payload.companies,
   };
-  if (payload.workspaceId || settings.workspaceId) {
-    body.workspaceId = payload.workspaceId || settings.workspaceId;
-  }
 
   return apiFetch("/api/scraper/import", {
     method: "POST",

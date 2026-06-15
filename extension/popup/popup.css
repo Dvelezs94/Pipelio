@@ -149,6 +149,15 @@ button:hover {
   display: none;
 }
 
+.hint {
+  margin: 4px 0 10px;
+}
+
 .sites {
   background: #fafafa;
+}
+
+select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }

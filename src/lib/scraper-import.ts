@@ -125,12 +125,12 @@ async function ensureExtensionZipSearch(
 export async function importScrapedCompanies(
   input: ScraperImportInput
 ): Promise<ScraperImportResult> {
-  const workspace = await prisma.workspace.findUnique({
+  const workspace = await prisma.workspace.findFirst({
     where: { id: input.workspaceId },
     select: { id: true },
   });
   if (!workspace) {
-    throw new Error("Workspace not found.");
+    throw new Error("Project not found.");
   }
 
   const source = input.source.trim() || "generic";
@@ -201,32 +201,4 @@ export async function importScrapedCompanies(
     total: toCreate.length,
     searchId,
   };
-}
-
-export async function resolveScraperWorkspaceId(
-  requestedId: string | null | undefined
-): Promise<string | null> {
-  if (requestedId?.trim()) {
-    const hit = await prisma.workspace.findUnique({
-      where: { id: requestedId.trim() },
-      select: { id: true },
-    });
-    if (hit) return hit.id;
-    return null;
-  }
-
-  const fromEnv = process.env.SCRAPER_WORKSPACE_ID?.trim();
-  if (fromEnv) {
-    const hit = await prisma.workspace.findUnique({
-      where: { id: fromEnv },
-      select: { id: true },
-    });
-    if (hit) return hit.id;
-  }
-
-  const fallback = await prisma.workspace.findFirst({
-    orderBy: { createdAt: "asc" },
-    select: { id: true },
-  });
-  return fallback?.id ?? null;
 }

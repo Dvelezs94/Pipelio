@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import {
-  getScraperApiKey,
-  isScraperAuthorized,
+  authenticateScraperRequest,
   SCRAPER_WORKSPACE_HEADER,
 } from "@/lib/scraper-auth";
-import { importScrapedCompanies, resolveScraperWorkspaceId } from "@/lib/scraper-import";
+import { resolveWorkspaceForScraperUser } from "@/lib/scraper-api-keys";
+import { importScrapedCompanies } from "@/lib/scraper-import";
 
 const companySchema = z.object({
   externalId: z.string().optional(),
@@ -25,7 +25,7 @@ const bodySchema = z.object({
   source: z.string().min(1),
   pageUrl: z.string().url(),
   searchLabel: z.string().optional(),
-  workspaceId: z.string().optional(),
+  workspaceId: z.string().min(1),
   companies: z.array(companySchema).min(1).max(200),
 });
 
@@ -46,19 +46,13 @@ function corsHeaders(): HeadersInit {
 
 /**
  * POST /api/scraper/import
- * Browser extension endpoint. Auth: x-scraper-key header (SCRAPER_API_KEY in .env).
- * Optional workspace: body.workspaceId or x-workspace-id header or SCRAPER_WORKSPACE_ID env.
+ * Auth: x-scraper-key (user-generated key from Settings → Extension).
+ * Requires workspaceId (project) owned by the key's user.
  */
 export async function POST(request: NextRequest) {
-  if (!getScraperApiKey()) {
-    return NextResponse.json(
-      { error: "SCRAPER_API_KEY is not configured on the server." },
-      { status: 503, headers: corsHeaders() }
-    );
-  }
-
-  if (!isScraperAuthorized(request)) {
-    return NextResponse.json({ error: "Invalid or missing scraper API key." }, { status: 401, headers: corsHeaders() });
+  const auth = await authenticateScraperRequest(request);
+  if (!auth) {
+    return NextResponse.json({ error: "Invalid or missing API key." }, { status: 401, headers: corsHeaders() });
   }
 
   let json: unknown;
@@ -77,13 +71,14 @@ export async function POST(request: NextRequest) {
   }
 
   const headerWorkspaceId = request.headers.get(SCRAPER_WORKSPACE_HEADER);
-  const workspaceId = await resolveScraperWorkspaceId(
+  const workspaceId = await resolveWorkspaceForScraperUser(
+    auth.userId,
     parsed.data.workspaceId ?? headerWorkspaceId
   );
 
   if (!workspaceId) {
     return NextResponse.json(
-      { error: "Workspace not found. Set workspaceId in the extension or SCRAPER_WORKSPACE_ID in .env." },
+      { error: "Project not found. Select a project in the extension settings." },
       { status: 400, headers: corsHeaders() }
     );
   }

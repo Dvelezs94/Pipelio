@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getScraperApiKey, isScraperAuthorized } from "@/lib/scraper-auth";
-import { resolveScraperWorkspaceId } from "@/lib/scraper-import";
-import { SCRAPER_WORKSPACE_HEADER } from "@/lib/scraper-auth";
+import { authenticateScraperRequest, SCRAPER_WORKSPACE_HEADER } from "@/lib/scraper-auth";
+import { resolveWorkspaceForScraperUser } from "@/lib/scraper-api-keys";
 
 function corsHeaders(): HeadersInit {
   return {
@@ -15,26 +14,25 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: corsHeaders() });
 }
 
-/** GET /api/scraper/status — health check for the browser extension */
+/** GET /api/scraper/status — validate API key and optional project selection */
 export async function GET(request: NextRequest) {
-  if (!getScraperApiKey()) {
-    return NextResponse.json(
-      { ok: false, error: "SCRAPER_API_KEY is not configured." },
-      { status: 503, headers: corsHeaders() }
-    );
+  const auth = await authenticateScraperRequest(request);
+  if (!auth) {
+    return NextResponse.json({ ok: false, error: "Invalid or missing API key." }, { status: 401, headers: corsHeaders() });
   }
 
-  if (!isScraperAuthorized(request)) {
-    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401, headers: corsHeaders() });
-  }
-
-  const workspaceId = await resolveScraperWorkspaceId(request.headers.get(SCRAPER_WORKSPACE_HEADER));
+  const selectedWorkspaceId = request.headers.get(SCRAPER_WORKSPACE_HEADER);
+  const workspaceId = selectedWorkspaceId
+    ? await resolveWorkspaceForScraperUser(auth.userId, selectedWorkspaceId)
+    : null;
 
   return NextResponse.json(
     {
       ok: true,
+      userId: auth.userId,
       workspaceId,
-      message: "Scraper API is ready.",
+      workspaceValid: selectedWorkspaceId ? Boolean(workspaceId) : null,
+      message: "API key valid.",
     },
     { headers: corsHeaders() }
   );

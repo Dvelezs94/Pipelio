@@ -1,24 +1,19 @@
 /**
- * Edit these defaults before loading the extension in Chrome / Opera.
- * Popup settings override these values at runtime (stored in chrome.storage.sync).
+ * Default extension settings. Users paste their personal API key from
+ * Pipelio → Extension settings after generating one in the app.
  */
 const EXTENSION_CONFIG = {
   /** Base URL of your Pipelio app (no trailing slash) */
   API_URL: "https://pipelio-coral.vercel.app",
 
-  /** Must match SCRAPER_API_KEY in the app's .env */
-  API_KEY: "ff29a971fb933536",
+  /** Personal API key (plk_…) — set in the extension popup, not here in production */
+  API_KEY: "",
 
-  /** Workspace ID from /db or GET /api/scraper/workspaces — leave empty to use server default */
+  /** Selected project (workspace) ID — chosen in popup after connecting */
   WORKSPACE_ID: "",
 
-  /** Auto-scrape when visiting supported listing sites */
-  AUTO_SCRAPE: false,
-
-  /** Minimum seconds between API batches per tab */
+  AUTO_SCRAPE: true,
   SEND_INTERVAL_SEC: 8,
-
-  /** Max companies per API request */
   BATCH_SIZE: 25,
 };
 

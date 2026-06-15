@@ -65,6 +65,7 @@
   async function flushQueue(force = false) {
     const config = await getConfig();
     if (!config.autoScrape && !force) return;
+    if (!config.apiKey || !config.workspaceId) return;
     if (pending.length === 0) return;
 
     const now = Date.now();
@@ -113,6 +114,10 @@
     const config = await getConfig();
     if (!config.autoScrape && !force) {
       showBadge("Auto-scrape paused");
+      return;
+    }
+    if (!config.apiKey || !config.workspaceId) {
+      if (force) showBadge("Set API key & project in extension popup");
       return;
     }
 
