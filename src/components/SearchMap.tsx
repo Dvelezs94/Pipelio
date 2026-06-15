@@ -31,6 +31,8 @@ export function SearchMap({ center, radiusKm, apiKey, className }: SearchMapProp
       return;
     }
 
+    if (mapRef.current) return;
+
     const radiusMeters = radiusKm * 1000;
 
     function initMap() {
@@ -90,7 +92,7 @@ export function SearchMap({ center, radiusKm, apiKey, className }: SearchMapProp
     };
     script.onerror = () => setError("Failed to load Google Maps script");
     document.head.appendChild(script);
-  }, [apiKey, center?.lat, center?.lng]);
+  }, [apiKey, center, radiusKm]);
 
   // Update circle when radius or center changes (map already mounted)
   useEffect(() => {

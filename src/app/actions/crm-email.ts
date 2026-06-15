@@ -45,26 +45,37 @@ async function getLeadEmailThreadHeaders(crmLeadId: string): Promise<{
   references?: string;
   threadRootSubject: string | null;
 }> {
+  type SentThreadRow = {
+    messageId: string | null;
+    subject: string | null;
+    sentAt: Date | null;
+  };
+  type InboxThreadRow = {
+    messageId: string;
+    subject: string | null;
+    receivedAt: Date;
+  };
+
   const [sent, inbox] = await Promise.all([
     prisma.crmEmail.findMany({
       where: { crmLeadId, sendStatus: "sent", messageId: { not: null } },
       orderBy: { sentAt: "asc" },
       select: { messageId: true, subject: true, sentAt: true },
-    }),
+    }) as Promise<SentThreadRow[]>,
     prisma.crmInboxMessage.findMany({
       where: { crmLeadId },
       orderBy: { receivedAt: "asc" },
       select: { messageId: true, subject: true, receivedAt: true },
-    }),
+    }) as Promise<InboxThreadRow[]>,
   ]);
 
   const merged = [
-    ...sent.map((e) => ({
+    ...sent.map((e: SentThreadRow) => ({
       messageId: e.messageId!,
       subject: e.subject,
       at: e.sentAt!,
     })),
-    ...inbox.map((m) => ({
+    ...inbox.map((m: InboxThreadRow) => ({
       messageId: m.messageId,
       subject: m.subject,
       at: m.receivedAt,
