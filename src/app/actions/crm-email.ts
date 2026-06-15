@@ -1,5 +1,6 @@
 "use server";
 
+import type { CrmEmailRevision, CrmInboxMessage, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import {
@@ -144,6 +145,10 @@ export type CrmInboxRow = {
   bodyText: string | null;
   receivedAt: Date;
 };
+
+type CrmEmailWithRevisionCount = Prisma.CrmEmailGetPayload<{
+  include: { _count: { select: { revisions: true } } };
+}>;
 
 /** Render a template for a lead without saving (for compose prefill). */
 export async function previewEmailTemplate(
@@ -556,12 +561,13 @@ export async function deleteCrmEmail(crmEmailId: string): Promise<CrmEmailAction
 }
 
 export async function getCrmEmailsForLead(crmLeadId: string): Promise<CrmEmailRow[]> {
-  const emails = await prisma.crmEmail.findMany({
+  const emails = (await prisma.crmEmail.findMany({
     where: { crmLeadId },
     orderBy: { updatedAt: "desc" },
     include: { _count: { select: { revisions: true } } },
-  });
-  return emails.map((e) => ({
+  })) as CrmEmailWithRevisionCount[];
+
+  return emails.map((e: CrmEmailWithRevisionCount) => ({
     id: e.id,
     crmLeadId: e.crmLeadId,
     type: e.type,
@@ -580,11 +586,12 @@ export async function getCrmEmailsForLead(crmLeadId: string): Promise<CrmEmailRo
 }
 
 export async function getCrmEmailRevisions(crmEmailId: string): Promise<CrmEmailRevisionRow[]> {
-  const revs = await prisma.crmEmailRevision.findMany({
+  const revs = (await prisma.crmEmailRevision.findMany({
     where: { crmEmailId },
     orderBy: { createdAt: "desc" },
-  });
-  return revs.map((r) => ({
+  })) as CrmEmailRevision[];
+
+  return revs.map((r: CrmEmailRevision) => ({
     id: r.id,
     subject: r.subject,
     body: r.body,
@@ -594,12 +601,13 @@ export async function getCrmEmailRevisions(crmEmailId: string): Promise<CrmEmail
 }
 
 export async function getCrmInboxForLead(crmLeadId: string): Promise<CrmInboxRow[]> {
-  const rows = await prisma.crmInboxMessage.findMany({
+  const rows = (await prisma.crmInboxMessage.findMany({
     where: { crmLeadId },
     orderBy: { receivedAt: "desc" },
     take: 20,
-  });
-  return rows.map((r) => ({
+  })) as CrmInboxMessage[];
+
+  return rows.map((r: CrmInboxMessage) => ({
     id: r.id,
     fromEmail: r.fromEmail,
     fromName: r.fromName,
