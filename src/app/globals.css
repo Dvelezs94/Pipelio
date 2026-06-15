@@ -3,25 +3,78 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+  --card: #ffffff;
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff;
+  --popover-foreground: #0a0a0a;
+  --primary: #0f766e;
+  --primary-foreground: #f0fdfa;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f1f5f9;
+  --accent-foreground: #0f172a;
+  --destructive: #dc2626;
+  --destructive-foreground: #fafafa;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #0f766e;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --card: #171717;
+  --card-foreground: #fafafa;
+  --popover: #171717;
+  --popover-foreground: #fafafa;
+  --primary: #2dd4bf;
+  --primary-foreground: #0f172a;
+  --secondary: #262626;
+  --secondary-foreground: #fafafa;
+  --muted: #262626;
+  --muted-foreground: #a1a1aa;
+  --accent: #262626;
+  --accent-foreground: #fafafa;
+  --destructive: #b91c1c;
+  --destructive-foreground: #fafafa;
+  --border: #262626;
+  --input: #262626;
+  --ring: #2dd4bf;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}
+
+/* Visited business rows in search results — Tailwind opacity on var(--primary) hex does not work */
+.business-results-table tbody tr[data-visited="true"] td {
+  background-color: color-mix(in srgb, var(--primary) 28%, var(--card)) !important;
+}
+.business-results-table tbody tr[data-visited="true"] {
+  box-shadow: inset 3px 0 0 0 var(--primary);
+}
+/* Most recently seen row — distinct amber highlight */
+.business-results-table tbody tr[data-last-visited="true"] td {
+  background-color: color-mix(in srgb, #f59e0b 32%, var(--card)) !important;
+}
+.business-results-table tbody tr[data-last-visited="true"] {
+  box-shadow: inset 4px 0 0 0 #f59e0b;
 }

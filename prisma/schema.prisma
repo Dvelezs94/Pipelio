@@ -1,0 +1,202 @@
+// Prisma schema for Google Maps Research / Lead Generation MVP
+// Database: SQLite
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String      @id @default(cuid())
+  email        String      @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime    @default(now())
+  workspaces   Workspace[]
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  zipSearches    ZipSearch[]
+  businesses     Business[]
+  smtpConfig     SmtpConfig?
+  proposalSender ProposalSender?
+  emailTemplates CrmEmailTemplate[]
+  inboxMessages  CrmInboxMessage[]
+}
+
+model ZipSearch {
+  id           String     @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  zipCode      String     @default("") // legacy ZIP search
+  countryCode  String     @default("US")
+  lat          Float      @default(0)
+  lng          Float      @default(0)
+  radius       Int        @default(0) // meters; legacy ZIP search
+  searchQuery  String?    // legacy text search query
+  industry     String?    // industry searched (e.g. "SaaS")
+  searchSource String?    // product_hunt | yc | github | mixed
+  createdAt    DateTime   @default(now())
+  businesses   Business[]
+}
+
+model Business {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  placeId     String
+  name        String
+  address     String?
+  phone       String?
+  email       String?
+  website     String?
+  rating      Float?
+  reviews     Int       @default(0)
+  category    String?   // raw Google category
+  industry    String?   // mapped industry
+  size        String?   // Small | Medium | Large
+  lat         Float?
+  lng         Float?
+  zipSearchId String
+  zipSearch   ZipSearch @relation(fields: [zipSearchId], references: [id], onDelete: Cascade)
+  // Bonus: enrichment fields
+  domain      String?
+  leadScore   Int?      @default(0)
+  crmLead     CrmLead?
+  dismissedAt DateTime? // when set, business is hidden by default (soft dismiss)
+  viewedAt    DateTime? // when set, user opened an external link for this business
+
+  @@unique([workspaceId, placeId])
+}
+
+model CrmLead {
+  id           String    @id @default(cuid())
+  businessId   String    @unique
+  business     Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  status       String    @default("new")   // new | contacted | qualified | not_qualified | converted
+  sortOrder    Int?      // order within status column (lower = higher in list)
+  notes        String?   // legacy single note; prefer CrmNote for multiple
+  contactEmail String?   // recipient override for outbound email
+  inboxLastReadAt DateTime? // last time user viewed conversation (for unread inbox badge)
+  createdAt    DateTime  @default(now())
+  emails       CrmEmail[]
+  noteList     CrmNote[] @relation("LeadNotes")
+  inbox        CrmInboxMessage[]
+}
+
+model CrmNote {
+  id        String   @id @default(cuid())
+  crmLeadId String
+  crmLead   CrmLead  @relation("LeadNotes", fields: [crmLeadId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model CrmEmail {
+  id         String   @id @default(cuid())
+  crmLeadId  String
+  crmLead    CrmLead  @relation(fields: [crmLeadId], references: [id], onDelete: Cascade)
+  type       String   // first_contact, second_follow_up, third_follow_up, etc.
+  channel    String   @default("email")
+  language   String   @default("en")
+  subject    String?
+  body       String
+  recipient  String?
+  sentAt     DateTime?
+  sendStatus String?  // sent | failed
+  sendError  String?
+  messageId  String?  // SMTP Message-ID for threading
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  revisions  CrmEmailRevision[]
+}
+
+model CrmEmailTemplate {
+  id              String    @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name            String
+  type            String    // first_contact, second_follow_up, etc.
+  channel         String    @default("email")
+  language        String    @default("en")
+  subjectTemplate String?
+  bodyTemplate    String
+  isDefault       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model SmtpConfig {
+  id                String    @id @default(cuid())
+  workspaceId       String    @unique
+  workspace         Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  host              String?
+  port              Int       @default(587)
+  secure            Boolean   @default(false)
+  smtpSecurity      String    @default("starttls") // none | starttls | ssl
+  smtpAuth          String    @default("plain")    // none | plain | login
+  username          String?
+  password          String?
+  fromEmail         String?
+  fromName          String?
+  imapHost          String?
+  imapPort          Int       @default(993)
+  imapSecure        Boolean   @default(true)
+  imapSecurity      String    @default("ssl")      // none | starttls | ssl
+  imapUsername      String?
+  imapPassword      String?
+  inboxLastSyncedAt DateTime?
+  updatedAt         DateTime  @updatedAt
+}
+
+model CrmInboxMessage {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  crmLeadId   String?
+  crmLead     CrmLead?  @relation(fields: [crmLeadId], references: [id], onDelete: SetNull)
+  messageId   String
+  fromEmail   String
+  fromName    String?
+  subject     String?
+  bodyText    String?
+  bodyHtml    String?
+  receivedAt  DateTime
+  inReplyTo   String?
+  createdAt   DateTime  @default(now())
+
+  @@unique([workspaceId, messageId])
+}
+
+model CrmEmailRevision {
+  id        String   @id @default(cuid())
+  crmEmailId String
+  crmEmail   CrmEmail @relation(fields: [crmEmailId], references: [id], onDelete: Cascade)
+  subject   String?
+  body      String
+  source    String   // 'ai' | 'user'
+  createdAt DateTime @default(now())
+}
+
+model ProposalSender {
+  id             String    @id @default(cuid())
+  workspaceId    String    @unique
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  yourName       String?
+  yourTitle      String?
+  yourEmail      String?
+  yourPhone      String?
+  yourWebsite    String?
+  aiDraftContext String? // extra instructions for AI draft in CRM conversations
+  updatedAt      DateTime  @updatedAt
+}

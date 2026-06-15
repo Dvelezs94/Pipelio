@@ -6,21 +6,48 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate-workspaces": "node scripts/migrate-workspaces.mjs",
+    "db:push": "prisma db push"
   },
   "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.4.2",
+    "@prisma/client": "^7.4.2",
+    "@radix-ui/react-accordion": "^1.2.12",
+    "@radix-ui/react-checkbox": "^1.3.3",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-slider": "^1.3.6",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.6.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "imapflow": "^1.4.0",
+    "jose": "^6.2.3",
+    "lucide-react": "^0.577.0",
+    "next": "14.2.35",
+    "nodemailer": "^8.0.11",
+    "prisma": "^7.4.2",
     "react": "^18",
     "react-dom": "^18",
-    "next": "14.2.35"
+    "swr": "^2.4.1",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/google.maps": "^3.58.1",
     "@types/node": "^20",
+    "@types/nodemailer": "^8.0.1",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "dotenv": "^17.3.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.35",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.35"
+    "typescript": "^5"
   }
 }

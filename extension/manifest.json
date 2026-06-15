@@ -1,0 +1,60 @@
+{
+  "manifest_version": 3,
+  "name": "Client Research Scraper",
+  "version": "1.0.0",
+  "description": "Scrape SaaS and software company listings (Clutch, G2, Crunchbase, Product Hunt, YC, etc.) and send them to your Client Research app.",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Client Research Scraper",
+    "default_popup": "popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://clutch.co/*",
+        "*://*.clutch.co/*",
+        "*://crunchbase.com/*",
+        "*://*.crunchbase.com/*",
+        "*://g2.com/*",
+        "*://*.g2.com/*",
+        "*://capterra.com/*",
+        "*://*.capterra.com/*",
+        "*://producthunt.com/*",
+        "*://*.producthunt.com/*",
+        "*://ycombinator.com/*",
+        "*://*.ycombinator.com/*",
+        "*://wellfound.com/*",
+        "*://*.wellfound.com/*",
+        "*://angel.co/*",
+        "*://*.angel.co/*",
+        "*://goodfirms.co/*",
+        "*://*.goodfirms.co/*",
+        "*://getapp.com/*",
+        "*://*.getapp.com/*",
+        "*://softwareadvice.com/*",
+        "*://*.softwareadvice.com/*",
+        "*://builtin.com/*",
+        "*://*.builtin.com/*",
+        "*://softwaresuggest.com/*",
+        "*://*.softwaresuggest.com/*",
+        "*://github.com/*"
+      ],
+      "js": [
+        "config.js",
+        "shared/utils.js",
+        "content/extractors.js",
+        "content/scraper.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}

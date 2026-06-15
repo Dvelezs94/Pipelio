@@ -1,0 +1,154 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  width: 320px;
+  font: 13px/1.45 system-ui, -apple-system, sans-serif;
+  color: #0a0a0a;
+  background: #fafafa;
+}
+
+header {
+  padding: 14px 14px 8px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.card {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+label {
+  display: block;
+  margin: 8px 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+label:first-child {
+  margin-top: 0;
+}
+
+input[type="url"],
+input[type="text"],
+input[type="password"],
+select {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.row {
+  display: flex;
+  gap: 6px;
+}
+
+.row input {
+  flex: 1;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  text-transform: none;
+  font-weight: 500;
+  color: #0a0a0a;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+button {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  background: #0f766e;
+  color: #f0fdfa;
+}
+
+button.secondary {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+button.full {
+  width: 100%;
+  margin-top: 8px;
+}
+
+button:hover {
+  filter: brightness(0.95);
+}
+
+.muted {
+  color: #64748b;
+}
+
+.small {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.label {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.status {
+  min-height: 18px;
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+
+.status.ok {
+  color: #0f766e;
+}
+
+.status.err {
+  color: #dc2626;
+}
+
+.stats {
+  margin: 6px 0 0;
+  font-size: 11px;
+}
+
+.hidden {
+  display: none;
+}
+
+.sites {
+  background: #fafafa;
+}
