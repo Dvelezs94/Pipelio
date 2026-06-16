@@ -18,6 +18,8 @@ import {
   Phone,
   UserPlus,
   Check,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 type ZipSearchRef = {
@@ -49,6 +51,7 @@ export type BusinessDetailFields = {
   employeeRange?: string | null;
   domain?: string | null;
   zipSearch?: ZipSearchRef | null;
+  dismissedAt?: string | null;
 };
 
 function display(value: string | number | null | undefined) {
@@ -80,6 +83,8 @@ export function BusinessDetailModal({
   savedToCrm,
   savingToCrm,
   onSaveToCrm,
+  dismissing,
+  onDismiss,
 }: {
   business: BusinessDetailFields | null;
   open: boolean;
@@ -87,8 +92,12 @@ export function BusinessDetailModal({
   savedToCrm?: boolean;
   savingToCrm?: boolean;
   onSaveToCrm?: (businessId: string) => void;
+  dismissing?: boolean;
+  onDismiss?: (businessId: string, isDismissed: boolean) => void;
 }) {
   if (!business) return null;
+
+  const isDismissed = !!business.dismissedAt;
 
   const listingUrl = resolveBusinessSourceUrl(business);
   const websiteHref = business.website
@@ -99,12 +108,15 @@ export function BusinessDetailModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+      <DialogContent
+        className={`max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden${isDismissed ? " opacity-90" : ""}`}
+      >
         <DialogHeader className="px-6 pt-6 pb-4 shrink-0 border-b">
           <DialogTitle className="pr-8">{business.name}</DialogTitle>
           <p className="text-sm text-muted-foreground">
             {display(business.industry)}
             {business.leadScore != null ? ` · Lead score ${business.leadScore}` : ""}
+            {isDismissed ? " · Dismissed" : ""}
           </p>
         </DialogHeader>
 
@@ -252,6 +264,29 @@ export function BusinessDetailModal({
                 <Phone className="h-4 w-4 mr-1" />
                 Call
               </a>
+            )}
+            {onDismiss && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1"
+                disabled={dismissing}
+                onClick={() => onDismiss(business.id, isDismissed)}
+              >
+                {dismissing ? (
+                  "..."
+                ) : isDismissed ? (
+                  <>
+                    <Eye className="h-4 w-4" />
+                    Undismiss
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="h-4 w-4" />
+                    Dismiss
+                  </>
+                )}
+              </Button>
             )}
             {onSaveToCrm &&
               (savedToCrm ? (

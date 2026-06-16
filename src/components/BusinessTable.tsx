@@ -453,7 +453,11 @@ export function BusinessTable({
       </div>
 
       <BusinessDetailModal
-        business={detailBusiness}
+        business={
+          detailBusiness
+            ? { ...detailBusiness, dismissedAt: dismissedAtFor(detailBusiness) }
+            : null
+        }
         open={detailBusiness != null}
         onOpenChange={(open) => {
           if (!open) setDetailBusiness(null);
@@ -461,6 +465,8 @@ export function BusinessTable({
         savedToCrm={detailBusiness ? savedSet.has(detailBusiness.id) : false}
         savingToCrm={detailBusiness ? savingId === detailBusiness.id : false}
         onSaveToCrm={savedToCrmIds !== undefined ? handleSaveToCrm : undefined}
+        dismissing={detailBusiness ? dismissingId === detailBusiness.id : false}
+        onDismiss={onDismissChange !== undefined ? handleDismiss : undefined}
       />
     </div>
   );

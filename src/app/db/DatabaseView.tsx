@@ -555,6 +555,8 @@ export function DatabaseView() {
           savedToCrm={detailBusiness ? savedSet.has(detailBusiness.id) : false}
           savingToCrm={detailBusiness ? savingId === detailBusiness.id : false}
           onSaveToCrm={handleSaveToCrm}
+          dismissing={detailBusiness ? dismissingId === detailBusiness.id : false}
+          onDismiss={handleDismiss}
         />
       </main>
     </div>
