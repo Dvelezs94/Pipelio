@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { requireWorkspaceId } from "@/lib/workspace";
 import { revalidatePath } from "next/cache";
 import { testSmtpConnection } from "@/lib/mail";
-import { syncInboxMessages } from "@/lib/imap";
+import { imapSettingsFromConfig, syncInboxMessages, testImapConnection } from "@/lib/imap";
 import {
   type AuthMethod,
   type ConnectionSecurity,
@@ -48,9 +48,39 @@ async function resolveSmtpConfig(formData?: SmtpConfigRow): Promise<SmtpConfigRo
 }
 
 function smtpRequiredMissing(row: SmtpConfigRow): boolean {
-  if (!row.host?.trim() || !row.fromEmail?.trim()) return true;
-  if (row.smtpAuth === "none") return false;
-  return !row.username?.trim() || !row.password?.trim();
+  return describeSmtpConfigGaps(row).length > 0;
+}
+
+/** Human-readable list of missing SMTP fields for the active business. */
+export function describeSmtpConfigGaps(row: SmtpConfigRow): string[] {
+  const gaps: string[] = [];
+  if (!row.host?.trim()) gaps.push("SMTP host");
+  if (!row.fromEmail?.trim()) gaps.push("from email");
+  if (row.smtpAuth !== "none") {
+    if (!row.username?.trim()) gaps.push("username");
+    if (!row.password?.trim()) gaps.push("password");
+  }
+  return gaps;
+}
+
+export function isSmtpConfigured(row: SmtpConfigRow): boolean {
+  return !smtpRequiredMissing(row);
+}
+
+export function describeImapConfigGaps(row: SmtpConfigRow): string[] {
+  const gaps: string[] = [];
+  if (!row.imapHost?.trim() && !row.host?.trim()) gaps.push("IMAP host (or SMTP host)");
+  const username = row.imapUsername?.trim() || row.username?.trim();
+  const password = row.imapPassword?.trim() || row.password?.trim();
+  if (!username) gaps.push("IMAP username (or SMTP username)");
+  if (!password) gaps.push("IMAP password (or SMTP password)");
+  return gaps;
+}
+
+export async function getSmtpConfigStatus(): Promise<{ configured: boolean; issues: string[] }> {
+  const row = await getSmtpConfig();
+  const issues = describeSmtpConfigGaps(row);
+  return { configured: issues.length === 0, issues };
 }
 
 export async function getSmtpConfig(): Promise<SmtpConfigRow> {
@@ -144,26 +174,44 @@ export async function setSmtpConfig(data: SmtpConfigRow): Promise<ActionResult> 
   }
 }
 
-export async function testSmtpConfig(formData?: SmtpConfigRow): Promise<ActionResult> {
+export async function testEmailConfig(formData?: SmtpConfigRow): Promise<ActionResult> {
   const row = await resolveSmtpConfig(formData);
-  if (smtpRequiredMissing(row)) {
-    return {
-      success: false,
-      error: "Fill in SMTP host, from email, and credentials (unless auth is None).",
-    };
+  const errors: string[] = [];
+
+  const smtpGaps = describeSmtpConfigGaps(row);
+  if (smtpGaps.length > 0) {
+    errors.push(`SMTP: missing ${smtpGaps.join(", ")}.`);
+  } else {
+    const smtpResult = await testSmtpConnection({
+      host: row.host!.trim(),
+      port: row.port,
+      security: row.smtpSecurity,
+      authMethod: row.smtpAuth,
+      username: row.username?.trim() ?? "",
+      password: row.password?.trim() ?? "",
+      fromEmail: row.fromEmail!.trim(),
+      fromName: row.fromName?.trim() || null,
+    });
+    if (!smtpResult.ok) errors.push(`SMTP: ${smtpResult.error}`);
   }
-  const result = await testSmtpConnection({
-    host: row.host!.trim(),
-    port: row.port,
-    security: row.smtpSecurity,
-    authMethod: row.smtpAuth,
-    username: row.username?.trim() ?? "",
-    password: row.password?.trim() ?? "",
-    fromEmail: row.fromEmail!.trim(),
-    fromName: row.fromName?.trim() || null,
-  });
-  if (!result.ok) return { success: false, error: result.error };
-  return { success: true, data: "SMTP connection successful." };
+
+  const imapGaps = describeImapConfigGaps(row);
+  if (imapGaps.length > 0) {
+    errors.push(`IMAP: missing ${imapGaps.join(", ")}.`);
+  } else {
+    const imapSettings = imapSettingsFromConfig(row);
+    if (!imapSettings) {
+      errors.push("IMAP: could not resolve connection settings.");
+    } else {
+      const imapResult = await testImapConnection(imapSettings);
+      if (!imapResult.ok) errors.push(`IMAP: ${imapResult.error}`);
+    }
+  }
+
+  if (errors.length > 0) {
+    return { success: false, error: errors.join("\n\n") };
+  }
+  return { success: true, data: "SMTP and IMAP connections successful." };
 }
 
 export async function syncCrmInbox(formData?: SmtpConfigRow): Promise<ActionResult> {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,6 +14,7 @@ import { ProposalSenderForm } from "./ProposalSenderForm";
 import { SmtpSettingsForm } from "./SmtpSettingsForm";
 import type { ProposalSenderRow } from "@/app/actions/proposal-sender";
 import type { SmtpConfigRow } from "@/app/actions/smtp-config";
+import { getSmtpConfig } from "@/app/actions/smtp-config";
 import { cn } from "@/lib/utils";
 import { Settings, User, Mail } from "lucide-react";
 
@@ -22,11 +23,23 @@ type SettingsTab = "details" | "mail";
 export function CrmSettingsDialog({
   proposalSender,
   smtpConfig,
+  workspaceName,
 }: {
   proposalSender: ProposalSenderRow | null;
   smtpConfig: SmtpConfigRow;
+  workspaceName: string;
 }) {
   const [tab, setTab] = useState<SettingsTab>("details");
+  const [mailConfig, setMailConfig] = useState(smtpConfig);
+
+  useEffect(() => {
+    setMailConfig(smtpConfig);
+  }, [smtpConfig]);
+
+  useEffect(() => {
+    if (tab !== "mail") return;
+    void getSmtpConfig().then(setMailConfig);
+  }, [tab]);
 
   return (
     <Dialog>
@@ -68,7 +81,7 @@ export function CrmSettingsDialog({
         {tab === "details" ? (
           <ProposalSenderForm initial={proposalSender} />
         ) : (
-          <SmtpSettingsForm initial={smtpConfig} />
+          <SmtpSettingsForm initial={mailConfig} workspaceName={workspaceName} />
         )}
       </DialogContent>
     </Dialog>

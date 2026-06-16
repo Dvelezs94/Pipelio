@@ -88,6 +88,35 @@ async function reparseLegacyInboxBodies(workspaceId: string): Promise<number> {
   return updated;
 }
 
+export async function testImapConnection(
+  settings: ImapSettings
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const client = new ImapFlow({
+    host: settings.host,
+    port: settings.port,
+    secure: settings.security === "ssl",
+    tls: settings.security === "starttls" ? { rejectUnauthorized: true } : undefined,
+    auth: { user: settings.username, pass: settings.password },
+    logger: false,
+  });
+
+  try {
+    await client.connect();
+    const lock = await client.getMailboxLock("INBOX");
+    lock.release();
+    await client.logout();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "IMAP connection failed." };
+  } finally {
+    try {
+      await client.logout();
+    } catch {
+      // ignore
+    }
+  }
+}
+
 export async function syncInboxMessages(
   config?: MailConfigRow,
   workspaceId?: string

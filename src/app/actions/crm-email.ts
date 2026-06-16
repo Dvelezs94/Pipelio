@@ -11,7 +11,8 @@ import { getProposalSender } from "@/app/actions/proposal-sender";
 import { sendMail } from "@/lib/mail";
 import { renderTemplate, buildTemplateVars } from "@/lib/email-templates";
 import { formatInboxBodyForDisplay } from "@/lib/email-parse";
-import { getSmtpConfig } from "@/app/actions/smtp-config";
+import { getSmtpConfig, describeSmtpConfigGaps } from "@/app/actions/smtp-config";
+import { requireWorkspaceId } from "@/lib/workspace";
 
 async function getTemplateVarsForBusiness(business: {
   name: string;
@@ -427,8 +428,12 @@ export async function sendCrmEmail(
   recipient: string
 ): Promise<CrmEmailActionResult> {
   try {
-    const email = await prisma.crmEmail.findUnique({
-      where: { id: crmEmailId },
+    const workspaceId = await requireWorkspaceId();
+    const email = await prisma.crmEmail.findFirst({
+      where: {
+        id: crmEmailId,
+        crmLead: { business: { workspaceId } },
+      },
       include: { crmLead: { include: { business: true } } },
     });
     if (!email) return { success: false, error: "Email not found." };
@@ -438,6 +443,15 @@ export async function sendCrmEmail(
 
     const to = recipient.trim();
     if (!to) return { success: false, error: "Recipient email is required." };
+
+    const smtpStatus = await getSmtpConfig();
+    if (describeSmtpConfigGaps(smtpStatus).length > 0) {
+      return {
+        success: false,
+        error:
+          "SMTP is not configured for this business. Open CRM → Settings → Mail server and save your SMTP details.",
+      };
+    }
 
     const vars = await getTemplateVarsForBusiness(email.crmLead.business);
     const { subject, body } = renderEmailContent(email.subject, email.body, vars, {

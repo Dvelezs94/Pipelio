@@ -22,11 +22,12 @@ import {
   type CrmEmailRow,
   type CrmInboxRow,
 } from "@/app/actions/crm-email";
+import { getSmtpConfigStatus } from "@/app/actions/smtp-config";
 import type { EmailTemplateRow } from "@/app/actions/email-templates";
 import type { CrmLeadRow } from "./CrmLeadsTable";
 import { AiTextField } from "@/components/AiTextField";
 import { cn } from "@/lib/utils";
-import { Loader2, Send, Sparkles } from "lucide-react";
+import { Loader2, Send, Sparkles, AlertTriangle } from "lucide-react";
 
 type ThreadItem =
   | { kind: "sent"; date: Date; email: CrmEmailRow }
@@ -60,6 +61,9 @@ export function CrmLeadConversationPanel({
     message: string;
   } | null>(null);
   const [aiQuickPrompt, setAiQuickPrompt] = useState("");
+  const [smtpStatus, setSmtpStatus] = useState<{ configured: boolean; issues: string[] } | null>(
+    null
+  );
   const composeInitializedRef = useRef(false);
   const threadScrollRef = useRef<HTMLDivElement>(null);
 
@@ -89,6 +93,10 @@ export function CrmLeadConversationPanel({
         setSelectedChannel(draft.channel);
       }
     }
+  }, [lead.id]);
+
+  useEffect(() => {
+    void getSmtpConfigStatus().then(setSmtpStatus);
   }, [lead.id]);
 
   useEffect(() => {
@@ -216,6 +224,17 @@ export function CrmLeadConversationPanel({
       return;
     }
 
+    const status = smtpStatus ?? (await getSmtpConfigStatus());
+    setSmtpStatus(status);
+    if (!status.configured) {
+      const missing = status.issues.length > 0 ? ` Missing: ${status.issues.join(", ")}.` : "";
+      alert(
+        `SMTP is not configured for this business.${missing}\n\n` +
+          "Open CRM → Settings → Mail server to save your SMTP details before sending."
+      );
+      return;
+    }
+
     setSending(true);
     setSendFeedback(null);
     try {
@@ -327,6 +346,20 @@ export function CrmLeadConversationPanel({
       </div>
 
       <div className="shrink-0 mt-3 rounded-2xl border bg-card shadow-sm p-3 space-y-2">
+        {smtpStatus && !smtpStatus.configured && (
+          <div
+            className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200"
+            role="status"
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <p>
+              SMTP is not set up for this business
+              {smtpStatus.issues.length > 0 ? ` (missing: ${smtpStatus.issues.join(", ")})` : ""}.
+              Open <span className="font-medium">CRM → Settings → Mail server</span> to configure it
+              before sending.
+            </p>
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-2">
           <Input
             value={recipient}

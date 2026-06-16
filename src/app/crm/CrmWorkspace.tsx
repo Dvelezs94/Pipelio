@@ -18,11 +18,13 @@ export function CrmWorkspace({
   proposalSender,
   smtpConfig,
   templates,
+  workspaceName,
 }: {
   leads: CrmLeadRow[];
   proposalSender: ProposalSenderRow | null;
   smtpConfig: SmtpConfigRow;
   templates: EmailTemplateRow[];
+  workspaceName: string;
 }) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -41,7 +43,11 @@ export function CrmWorkspace({
             <div className="flex items-center gap-2 flex-wrap">
               <CrmTemplatesDialog templates={templates} />
               <CrmInboxSyncButton initialLastSyncedAt={smtpConfig.inboxLastSyncedAt} />
-              <CrmSettingsDialog proposalSender={proposalSender} smtpConfig={smtpConfig} />
+              <CrmSettingsDialog
+                proposalSender={proposalSender}
+                smtpConfig={smtpConfig}
+                workspaceName={workspaceName}
+              />
               <Link href="/">
                 <Button variant="outline" size="sm">
                   Back to Search

@@ -12,8 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  getSmtpConfig,
   setSmtpConfig,
-  testSmtpConfig,
+  testEmailConfig,
   syncCrmInbox,
   type SmtpConfigRow,
 } from "@/app/actions/smtp-config";
@@ -26,7 +27,13 @@ import {
 import { AiTextField } from "@/components/AiTextField";
 import { Loader2, Inbox } from "lucide-react";
 
-export function SmtpSettingsForm({ initial }: { initial: SmtpConfigRow }) {
+export function SmtpSettingsForm({
+  initial,
+  workspaceName,
+}: {
+  initial: SmtpConfigRow;
+  workspaceName: string;
+}) {
   const router = useRouter();
   const [config, setConfig] = useState(initial);
   const [saving, setSaving] = useState(false);
@@ -63,8 +70,11 @@ export function SmtpSettingsForm({ initial }: { initial: SmtpConfigRow }) {
     setSaving(true);
     try {
       const res = await setSmtpConfig(config);
-      if (res.success) router.refresh();
-      else alert(res.error);
+      if (res.success) {
+        const saved = await getSmtpConfig();
+        setConfig(saved);
+        router.refresh();
+      } else alert(res.error);
     } finally {
       setSaving(false);
     }
@@ -73,8 +83,8 @@ export function SmtpSettingsForm({ initial }: { initial: SmtpConfigRow }) {
   async function handleTest() {
     setTesting(true);
     try {
-      const res = await testSmtpConfig(config);
-      alert(res.success ? "SMTP connection OK." : res.error);
+      const res = await testEmailConfig(config);
+      alert(res.success ? "SMTP and IMAP connections OK." : res.error);
     } finally {
       setTesting(false);
     }
@@ -101,6 +111,7 @@ export function SmtpSettingsForm({ initial }: { initial: SmtpConfigRow }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
+        Mail settings are saved for <span className="font-medium text-foreground">{workspaceName}</span> only.
         Configure SMTP to send emails and IMAP to receive replies (last 30 days).
       </p>
 
@@ -238,7 +249,7 @@ export function SmtpSettingsForm({ initial }: { initial: SmtpConfigRow }) {
           {saving ? "Saving..." : "Save mail settings"}
         </Button>
         <Button variant="outline" onClick={handleTest} disabled={testing}>
-          {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Test SMTP"}
+          {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Test email"}
         </Button>
         <Button variant="outline" onClick={handleSync} disabled={syncing}>
           {syncing ? (

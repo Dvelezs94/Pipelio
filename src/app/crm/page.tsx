@@ -2,17 +2,19 @@ import { getCrmLeads } from "@/app/actions/crm";
 import { getProposalSender } from "@/app/actions/proposal-sender";
 import { getSmtpConfig } from "@/app/actions/smtp-config";
 import { getEmailTemplates } from "@/app/actions/email-templates";
+import { getCurrentWorkspace } from "@/lib/workspace";
 import { type CrmLeadRow } from "./CrmLeadsTable";
 import { CrmWorkspace } from "./CrmWorkspace";
 
 export const dynamic = "force-dynamic";
 
 export default async function CrmPage() {
-  const [leads, proposalSender, smtpConfig, templates] = await Promise.all([
+  const [leads, proposalSender, smtpConfig, templates, workspace] = await Promise.all([
     getCrmLeads(),
     getProposalSender(),
     getSmtpConfig(),
     getEmailTemplates(),
+    getCurrentWorkspace(),
   ]);
 
   const serialized: CrmLeadRow[] = leads.map((l) => ({
@@ -30,6 +32,7 @@ export default async function CrmPage() {
       proposalSender={proposalSender}
       smtpConfig={smtpConfig}
       templates={templates}
+      workspaceName={workspace.name}
     />
   );
 }
