@@ -55,6 +55,7 @@ export type ScraperImportInput = {
 export type ScraperImportResult = {
   imported: number;
   skipped: number;
+  updated?: number;
   total: number;
   searchId: string;
 };
@@ -131,6 +132,87 @@ async function ensureExtensionZipSearch(
   return id;
 }
 
+type BusinessImportRow = {
+  workspaceId: string;
+  placeId: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  rating: number | null;
+  reviews: number;
+  category: string | null;
+  industry: string;
+  size: string;
+  lat: number | null;
+  lng: number | null;
+  zipSearchId: string;
+  domain: string | null;
+  leadScore: number;
+  sourceUrl: string | null;
+  description: string | null;
+  hourlyRate: string | null;
+  minProjectSize: string | null;
+  employeeRange: string | null;
+};
+
+function mergeEnrichment(
+  existing: {
+    id: string;
+    description: string | null;
+    hourlyRate: string | null;
+    minProjectSize: string | null;
+    employeeRange: string | null;
+    category: string | null;
+    address: string | null;
+    phone: string | null;
+    email: string | null;
+    website: string | null;
+    rating: number | null;
+    reviews: number;
+    sourceUrl: string | null;
+    domain: string | null;
+    size: string | null;
+    leadScore: number | null;
+  },
+  incoming: BusinessImportRow
+) {
+  const data: Record<string, unknown> = {};
+
+  const pick = (key: keyof typeof existing, incomingVal: string | null | undefined) => {
+    if (!incomingVal?.trim()) return;
+    const cur = existing[key];
+    if (cur == null || cur === "") data[key] = incomingVal.trim();
+  };
+
+  if (incoming.description?.trim()) {
+    const next = incoming.description.trim();
+    if (!existing.description || next.length > existing.description.length) {
+      data.description = next;
+    }
+  }
+  pick("hourlyRate", incoming.hourlyRate);
+  pick("minProjectSize", incoming.minProjectSize);
+  pick("employeeRange", incoming.employeeRange);
+  pick("category", incoming.category);
+  pick("address", incoming.address);
+  pick("phone", incoming.phone);
+  pick("email", incoming.email);
+  pick("website", incoming.website);
+  pick("sourceUrl", incoming.sourceUrl);
+  pick("domain", incoming.domain);
+
+  if (incoming.rating != null && existing.rating == null) data.rating = incoming.rating;
+  if (incoming.reviews > existing.reviews) data.reviews = incoming.reviews;
+  if (incoming.leadScore != null && (existing.leadScore ?? 0) < incoming.leadScore) {
+    data.leadScore = incoming.leadScore;
+  }
+  if (incoming.size && (!existing.size || incoming.employeeRange)) data.size = incoming.size;
+
+  return data;
+}
+
 export async function importScrapedCompanies(
   input: ScraperImportInput
 ): Promise<ScraperImportResult> {
@@ -166,7 +248,7 @@ export async function importScrapedCompanies(
     return { imported: 0, skipped: 0, total: 0, searchId };
   }
 
-  const toCreate = rows.map(({ lead, profileUrl }) => {
+  const toCreate: BusinessImportRow[] = rows.map(({ lead, profileUrl }) => {
     const leadScore = computeTechLeadScore({
       website: lead.website,
       email: lead.email,
@@ -207,18 +289,47 @@ export async function importScrapedCompanies(
   const placeIds = [...new Set(toCreate.map((b) => b.placeId))];
   const existing = await prisma.business.findMany({
     where: { workspaceId: input.workspaceId, placeId: { in: placeIds } },
-    select: { placeId: true },
+    select: {
+      id: true,
+      placeId: true,
+      description: true,
+      hourlyRate: true,
+      minProjectSize: true,
+      employeeRange: true,
+      category: true,
+      address: true,
+      phone: true,
+      email: true,
+      website: true,
+      rating: true,
+      reviews: true,
+      sourceUrl: true,
+      domain: true,
+      size: true,
+      leadScore: true,
+    },
   });
-  const existingSet = new Set(existing.map((e) => e.placeId));
-  const newRows = toCreate.filter((b) => !existingSet.has(b.placeId));
+  const existingByPlaceId = new Map(existing.map((e) => [e.placeId, e]));
+  const newRows = toCreate.filter((b) => !existingByPlaceId.has(b.placeId));
 
   if (newRows.length > 0) {
     await prisma.business.createMany({ data: newRows });
   }
 
+  let updated = 0;
+  for (const incoming of toCreate) {
+    const prev = existingByPlaceId.get(incoming.placeId);
+    if (!prev) continue;
+    const patch = mergeEnrichment(prev, incoming);
+    if (Object.keys(patch).length === 0) continue;
+    await prisma.business.update({ where: { id: prev.id }, data: patch });
+    updated += 1;
+  }
+
   return {
     imported: newRows.length,
-    skipped: toCreate.length - newRows.length,
+    skipped: toCreate.length - newRows.length - updated,
+    updated,
     total: toCreate.length,
     searchId,
   };

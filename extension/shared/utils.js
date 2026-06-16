@@ -164,6 +164,36 @@ const SCRAPER_UTILS = {
     if (hourly) details.hourlyRate = hourly;
     if (employees) details.employeeRange = employees;
 
+    // Clutch 2024+ highlight / stat blocks
+    const statSelectors = [
+      ".provider-info__highlight",
+      ".provider-info .list-item",
+      ".module-list .list-item",
+      ".firm-details .list-item",
+      "[class*='provider-stat']",
+      "[class*='highlight']",
+      "[class*='list-item']",
+    ];
+    const statTexts = new Set();
+    for (const sel of statSelectors) {
+      card.querySelectorAll(sel).forEach((el) => {
+        const t = this.text(el);
+        if (t && t.length < 80) statTexts.add(t);
+      });
+    }
+    for (const t of statTexts) {
+      if (!details.minProjectSize && /^\$[\d,]+(?:\+|k\+)/i.test(t)) details.minProjectSize = t;
+      else if (!details.hourlyRate && (/\/\s*hr\b/i.test(t) || /^<\s*\$/.test(t))) details.hourlyRate = t;
+      else if (
+        !details.employeeRange &&
+        /^\d[\d,]*\s*-\s*\d[\d,]*/.test(t) &&
+        !/\$/.test(t) &&
+        !/hr/i.test(t)
+      ) {
+        details.employeeRange = t;
+      }
+    }
+
     if (!details.minProjectSize || !details.hourlyRate || !details.employeeRange) {
       const items = [...card.querySelectorAll(".module-list .list-item, .provider-info .list-item, .firm-details .list-item")]
         .map((el) => this.text(el))
@@ -173,13 +203,45 @@ const SCRAPER_UTILS = {
       if (items.length >= 3 && !details.employeeRange) details.employeeRange = items[2];
     }
 
-    const descEl = card.querySelector(
-      '[class*="description"], [class*="provider-insight"], [class*="company-summary"], [class*="ai-insight"], p.summary'
-    );
-    const description = this.text(descEl);
-    if (description && description.length > 20) details.description = description;
+    const descSelectors = [
+      '[class*="provider-insight"]',
+      '[class*="provider__description"]',
+      '[class*="directory-profile"]',
+      '[class*="company-summary"]',
+      '[class*="ai-insight"]',
+      '[data-testid*="description"]',
+      '[class*="description"]',
+      "p.summary",
+    ];
+    for (const sel of descSelectors) {
+      const el = card.querySelector(sel);
+      const description = this.text(el);
+      if (description && description.length > 40) {
+        details.description = description;
+        break;
+      }
+    }
+
+    if (!details.description) {
+      details.description = this.extractLongestNarrative(card, 60);
+    }
 
     return details;
+  },
+
+  /** Longest prose block in a listing card (Clutch AI summary, G2 blurb, etc.). */
+  extractLongestNarrative(card, minLen = 60) {
+    let best = "";
+    const skip = "button, a, h1, h2, h3, h4, nav, .rating-reviews, .module-list, [class*='chart'], [class*='legend']";
+    card.querySelectorAll("p, div, span").forEach((el) => {
+      if (el.closest(skip)) return;
+      if (el.querySelector("p, div")) return;
+      const t = this.text(el);
+      if (t.length <= best.length || t.length < minLen) return;
+      if (/^(view profile|visit website|see all|read more)$/i.test(t)) return;
+      best = t;
+    });
+    return best || null;
   },
 
   extractServiceFocus(card) {

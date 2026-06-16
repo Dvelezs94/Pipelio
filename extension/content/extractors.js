@@ -27,7 +27,13 @@
       industry: "Software Development",
       extract() {
         const u = U();
-        const cards = u.queryAll(["li.provider-row", "div.provider-row", "article.provider"]);
+        const cards = u.queryAll([
+          "li.provider-row",
+          "div.provider-row",
+          "article.provider",
+          "[id^='provider-']",
+          "div[class*='provider-row']",
+        ]);
         const results = [];
         const seenProfiles = new Set();
 
@@ -64,7 +70,9 @@
             "span[itemprop='reviewCount']",
             ".reviews-count",
           ]);
-          const location = u.firstText(card, [".locality", ".location", "[class*='location']"]);
+          const location =
+            u.firstText(card, [".locality", ".location", "[class*='location']"]) ||
+            u.labeledFieldValue(card, ["location", "headquarters"]);
           const tagline = u.firstText(card, [".tagline", ".company-tagline", "p.tagline"]);
           const listing = u.extractAgencyListingDetails(card);
           const services = u.extractServiceFocus(card);
