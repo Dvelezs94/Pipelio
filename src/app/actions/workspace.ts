@@ -39,6 +39,8 @@ export async function switchWorkspace(workspaceId: string): Promise<WorkspaceAct
       sameSite: "lax",
     });
     revalidatePath("/", "layout");
+    revalidatePath("/db");
+    revalidatePath("/crm");
     const ws = workspaces.find((w) => w.id === workspaceId)!;
     return { success: true, data: ws };
   } catch (e) {
@@ -59,6 +61,8 @@ export async function addWorkspace(name: string): Promise<WorkspaceActionResult>
       sameSite: "lax",
     });
     revalidatePath("/", "layout");
+    revalidatePath("/db");
+    revalidatePath("/crm");
     return { success: true, data: ws };
   } catch (e) {
     console.error("addWorkspace", e);
@@ -86,6 +90,8 @@ export async function renameBusiness(
     }
     await renameWorkspace(workspaceId, name, user.id);
     revalidatePath("/", "layout");
+    revalidatePath("/db");
+    revalidatePath("/crm");
     const updated = await prisma.workspace.findUniqueOrThrow({
       where: { id: workspaceId },
       select: { id: true, name: true, slug: true },

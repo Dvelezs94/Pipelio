@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Building2, Check, ChevronsUpDown, Loader2, Pencil, Plus } from "lucide-react";
 import {
   addWorkspace,
@@ -22,8 +22,13 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
+/** Full navigation so server data and client caches (SWR, etc.) reload for the new workspace. */
+function navigateAfterWorkspaceChange(pathname: string) {
+  window.location.href = pathname.startsWith("/results/") ? "/" : pathname;
+}
+
 export function WorkspaceSwitcher() {
-  const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
@@ -49,12 +54,15 @@ export function WorkspaceSwitcher() {
   }, [refresh]);
 
   function handleSwitch(id: string) {
+    if (id === active?.id) {
+      setOpen(false);
+      return;
+    }
     startTransition(async () => {
       const result = await switchWorkspace(id);
       if (result.success) {
-        setActive(result.data ?? null);
         setOpen(false);
-        router.refresh();
+        navigateAfterWorkspaceChange(pathname);
       }
     });
   }
@@ -70,9 +78,7 @@ export function WorkspaceSwitcher() {
       setNewName("");
       setCreateOpen(false);
       setOpen(false);
-      if (result.data) setActive(result.data);
-      await refresh();
-      router.refresh();
+      navigateAfterWorkspaceChange(pathname);
     });
   }
 
@@ -99,7 +105,6 @@ export function WorkspaceSwitcher() {
         setActive(result.data);
       }
       await refresh();
-      router.refresh();
     });
   }
 
