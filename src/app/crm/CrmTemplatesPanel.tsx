@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { CRM_EMAIL_TYPES, EMAIL_LANGUAGES, MESSAGE_CHANNELS } from "@/lib/email-types";
 import {
+  getEmailTemplates,
   saveEmailTemplate,
   deleteEmailTemplate,
   type EmailTemplateRow,
@@ -24,6 +25,7 @@ import { FileText, Plus, Trash2 } from "lucide-react";
 
 export function CrmTemplatesPanel({ templates }: { templates: EmailTemplateRow[] }) {
   const router = useRouter();
+  const [templateList, setTemplateList] = useState(templates);
   const [editing, setEditing] = useState<EmailTemplateRow | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [name, setName] = useState("");
@@ -35,6 +37,16 @@ export function CrmTemplatesPanel({ templates }: { templates: EmailTemplateRow[]
   const [saving, setSaving] = useState(false);
 
   const showEditor = isNew || editing !== null;
+
+  useEffect(() => {
+    setTemplateList(templates);
+  }, [templates]);
+
+  async function refreshTemplateList() {
+    const updated = await getEmailTemplates();
+    setTemplateList(updated);
+    return updated;
+  }
 
   function startNew() {
     setEditing(null);
@@ -94,6 +106,7 @@ export function CrmTemplatesPanel({ templates }: { templates: EmailTemplateRow[]
         bodyTemplate: bodyTemplate.trim(),
       });
       if (res.success) {
+        await refreshTemplateList();
         clearEditor();
         router.refresh();
       } else {
@@ -108,6 +121,7 @@ export function CrmTemplatesPanel({ templates }: { templates: EmailTemplateRow[]
     if (!confirm("Delete this template?")) return;
     const res = await deleteEmailTemplate(id);
     if (res.success) {
+      await refreshTemplateList();
       if (editing?.id === id) clearEditor();
       router.refresh();
     } else {
@@ -125,7 +139,7 @@ export function CrmTemplatesPanel({ templates }: { templates: EmailTemplateRow[]
           </p>
         </div>
         <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          {templates.map((t) => (
+          {templateList.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -140,7 +154,7 @@ export function CrmTemplatesPanel({ templates }: { templates: EmailTemplateRow[]
               {t.name}
             </button>
           ))}
-          {templates.length === 0 && (
+          {templateList.length === 0 && (
             <p className="px-2 py-3 text-xs text-muted-foreground">No templates yet.</p>
           )}
         </nav>
