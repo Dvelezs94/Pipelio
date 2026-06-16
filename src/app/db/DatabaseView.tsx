@@ -93,41 +93,60 @@ function buildApiUrl(params: {
   return u.toString();
 }
 
+type AppliedFilters = {
+  search: string;
+  industry: string;
+  size: string;
+  minRating: string;
+  hasWebsite: "any" | "true" | "false";
+  hasPhone: boolean;
+  includeDismissed: boolean;
+  excludeInCrm: boolean;
+  sortBy: string;
+  sortOrder: "asc" | "desc";
+};
+
+const DEFAULT_FILTERS: AppliedFilters = {
+  search: "",
+  industry: "__any__",
+  size: "__any__",
+  minRating: "",
+  hasWebsite: "any",
+  hasPhone: false,
+  includeDismissed: false,
+  excludeInCrm: false,
+  sortBy: "name",
+  sortOrder: "asc",
+};
+
 export function DatabaseView() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
-  const [search, setSearch] = useState("");
-  const [industry, setIndustry] = useState("__any__");
-  const [size, setSize] = useState("__any__");
-  const [minRating, setMinRating] = useState("");
-  const [hasWebsite, setHasWebsite] = useState<"any" | "true" | "false">("any");
-  const [hasPhone, setHasPhone] = useState(false);
-  const [includeDismissed, setIncludeDismissed] = useState(false);
-  const [excludeInCrm, setExcludeInCrm] = useState(false);
-  const [sortBy, setSortBy] = useState("name");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [draft, setDraft] = useState<AppliedFilters>(DEFAULT_FILTERS);
+  const [applied, setApplied] = useState<AppliedFilters>(DEFAULT_FILTERS);
   const [crmLeadIds, setCrmLeadIds] = useState<string[]>([]);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [dismissingId, setDismissingId] = useState<string | null>(null);
 
-  const apiParams = {
-    page,
-    limit,
-    search,
-    industry,
-    size,
-    minRating,
-    hasWebsite,
-    hasPhone,
-    includeDismissed,
-    excludeInCrm,
-    sortBy,
-    sortOrder,
-  };
+  const apiParams = { page, limit, ...applied };
   const apiUrl = buildApiUrl(apiParams);
 
-  const { data, mutate } = useSWR<{ businesses: BusinessRow[]; pagination: Pagination }>(
-    ["/api/businesses", page, limit, search, industry, size, minRating, hasWebsite, hasPhone, includeDismissed, excludeInCrm, sortBy, sortOrder],
+  const { data, mutate, isValidating } = useSWR<{ businesses: BusinessRow[]; pagination: Pagination }>(
+    [
+      "/api/businesses",
+      page,
+      limit,
+      applied.search,
+      applied.industry,
+      applied.size,
+      applied.minRating,
+      applied.hasWebsite,
+      applied.hasPhone,
+      applied.includeDismissed,
+      applied.excludeInCrm,
+      applied.sortBy,
+      applied.sortOrder,
+    ],
     () => fetcher(apiUrl)
   );
 
@@ -166,8 +185,26 @@ export function DatabaseView() {
   const savedSet = new Set(crmLeadIds);
 
   const applyFilters = () => {
+    setApplied(draft);
     setPage(1);
-    mutate();
+  };
+
+  const updateDraft = (patch: Partial<AppliedFilters>) => {
+    setDraft((prev) => ({ ...prev, ...patch }));
+  };
+
+  const applySort = (patch: Partial<Pick<AppliedFilters, "sortBy" | "sortOrder">>) => {
+    const next = { ...applied, ...patch };
+    setDraft(next);
+    setApplied(next);
+    setPage(1);
+  };
+
+  const applyExcludeInCrm = (excludeInCrm: boolean) => {
+    const next = { ...applied, excludeInCrm };
+    setDraft(next);
+    setApplied(next);
+    setPage(1);
   };
 
   return (
@@ -179,7 +216,10 @@ export function DatabaseView() {
             <div>
               <h1 className="text-xl font-semibold text-foreground">Database</h1>
               <p className="text-sm text-muted-foreground">
-                All companies from previous searches ({pagination.total} total)
+                {applied.search.trim() || applied.industry !== "__any__" || applied.size !== "__any__" || applied.minRating || applied.hasWebsite !== "any" || applied.hasPhone || applied.includeDismissed || applied.excludeInCrm
+                  ? `${pagination.total} matching`
+                  : `${pagination.total} total`}
+                {isValidating ? " · loading…" : ""}
               </p>
             </div>
           </div>
@@ -201,15 +241,20 @@ export function DatabaseView() {
                 <label className="text-sm font-medium text-muted-foreground block mb-1">Search by business name</label>
                 <Input
                   placeholder="Business name, address, or industry..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+                  value={draft.search}
+                  onChange={(e) => updateDraft({ search: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      applyFilters();
+                    }
+                  }}
                   className="w-56"
                 />
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground block mb-1">Industry</label>
-                <Select value={industry} onValueChange={setIndustry}>
+                <Select value={draft.industry} onValueChange={(industry) => updateDraft({ industry })}>
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Any" />
                   </SelectTrigger>
@@ -223,7 +268,7 @@ export function DatabaseView() {
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground block mb-1">Size</label>
-                <Select value={size} onValueChange={setSize}>
+                <Select value={draft.size} onValueChange={(size) => updateDraft({ size })}>
                   <SelectTrigger className="w-32">
                     <SelectValue placeholder="Any" />
                   </SelectTrigger>
@@ -243,14 +288,14 @@ export function DatabaseView() {
                   max="5"
                   step="0.1"
                   placeholder="Any"
-                  value={minRating}
-                  onChange={(e) => setMinRating(e.target.value)}
+                  value={draft.minRating}
+                  onChange={(e) => updateDraft({ minRating: e.target.value })}
                   className="w-20"
                 />
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground block mb-1">Has website</label>
-                <Select value={hasWebsite} onValueChange={(v) => setHasWebsite(v as "any" | "true" | "false")}>
+                <Select value={draft.hasWebsite} onValueChange={(v) => updateDraft({ hasWebsite: v as "any" | "true" | "false" })}>
                   <SelectTrigger className="w-24">
                     <SelectValue />
                   </SelectTrigger>
@@ -263,28 +308,25 @@ export function DatabaseView() {
               </div>
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2 text-sm">
-                  <Checkbox checked={hasPhone} onCheckedChange={(c) => setHasPhone(!!c)} />
+                  <Checkbox checked={draft.hasPhone} onCheckedChange={(c) => updateDraft({ hasPhone: !!c })} />
                   Has phone
                 </label>
                 <label className="flex items-center gap-2 text-sm">
-                  <Checkbox checked={includeDismissed} onCheckedChange={(c) => setIncludeDismissed(!!c)} />
+                  <Checkbox checked={draft.includeDismissed} onCheckedChange={(c) => updateDraft({ includeDismissed: !!c })} />
                   Show dismissed
                 </label>
               </div>
               <div className="flex items-center gap-2">
                 <label className="flex items-center gap-2 cursor-pointer text-sm">
                   <Checkbox
-                    checked={excludeInCrm}
-                    onCheckedChange={(c) => {
-                      setExcludeInCrm(!!c);
-                      setPage(1);
-                    }}
+                    checked={draft.excludeInCrm}
+                    onCheckedChange={(c) => applyExcludeInCrm(!!c)}
                   />
                   Hide saved to CRM
                 </label>
               </div>
               <div className="flex items-center gap-2">
-                <Select value={sortBy} onValueChange={setSortBy}>
+                <Select value={applied.sortBy} onValueChange={(sortBy) => applySort({ sortBy })}>
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
@@ -296,8 +338,12 @@ export function DatabaseView() {
                     <SelectItem value="leadScore">Lead score</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm" onClick={() => setSortOrder((o) => (o === "asc" ? "desc" : "asc"))}>
-                  {sortOrder === "asc" ? "↑ Asc" : "↓ Desc"}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => applySort({ sortOrder: applied.sortOrder === "asc" ? "desc" : "asc" })}
+                >
+                  {applied.sortOrder === "asc" ? "↑ Asc" : "↓ Desc"}
                 </Button>
               </div>
               <Button onClick={applyFilters}>Apply</Button>
