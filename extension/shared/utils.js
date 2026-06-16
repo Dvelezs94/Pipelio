@@ -74,6 +74,49 @@ const SCRAPER_UTILS = {
       .replace(/\b\w/g, (c) => c.toUpperCase());
   },
 
+  MAX_CATEGORY_LENGTH: 50,
+
+  truncateCategory(value) {
+    const t = (value || "").trim();
+    if (!t) return "";
+    if (t.length <= this.MAX_CATEGORY_LENGTH) return t;
+    const cut = t.slice(0, this.MAX_CATEGORY_LENGTH);
+    const lastSpace = cut.lastIndexOf(" ");
+    if (lastSpace > this.MAX_CATEGORY_LENGTH * 0.6) {
+      return cut.slice(0, lastSpace).trimEnd();
+    }
+    return cut.trimEnd();
+  },
+
+  normalizeCategory(value, fallback = null) {
+    const t = (value || "").trim();
+    if (!t || this.isClutchPricingNoise(t)) return fallback;
+    return this.truncateCategory(t) || fallback;
+  },
+
+  isClutchPricingNoise(text) {
+    const t = (text || "").trim();
+    if (!t) return true;
+    if (/reviews mention/i.test(t)) return true;
+    if (/avg\.?\s*project cost/i.test(t)) return true;
+    if (/project highlight/i.test(t)) return true;
+    if (/\d+\s+of\s+\d+/i.test(t) && /reviews?/i.test(t)) return true;
+    if (/rating for cost/i.test(t)) return true;
+    if (/most common project size/i.test(t)) return true;
+    if (/what clients have said/i.test(t)) return true;
+    return false;
+  },
+
+  isLikelyCategoryText(text) {
+    const t = (text || "").trim();
+    if (!t) return false;
+    return !this.isClutchPricingNoise(t);
+  },
+
+  isInPricingSnapshot(el) {
+    return !!el?.closest?.(".pricing-snapshot, [class*='pricing-snapshot'], [class*='pricing_snapshot']");
+  },
+
   dedupe(companies) {
     const seen = new Set();
     const out = [];
@@ -83,7 +126,11 @@ const SCRAPER_UTILS = {
       const key = c.externalId || c.profileUrl || c.website || name.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);
-      out.push({ ...c, name });
+      out.push({
+        ...c,
+        name,
+        category: c.category ? this.normalizeCategory(c.category, null) : c.category,
+      });
     }
     return out;
   },
@@ -131,6 +178,7 @@ const SCRAPER_UTILS = {
       matchers.some((m) => (typeof m === "string" ? label.includes(m) : m.test(label)));
 
     for (const el of root.querySelectorAll("[data-content], [data-title], dt, .label, .field-label")) {
+      if (this.isInPricingSnapshot(el)) continue;
       const raw =
         el.getAttribute("data-content") ||
         el.getAttribute("data-title") ||
@@ -177,6 +225,7 @@ const SCRAPER_UTILS = {
     const statTexts = new Set();
     for (const sel of statSelectors) {
       card.querySelectorAll(sel).forEach((el) => {
+        if (this.isInPricingSnapshot(el)) return;
         const t = this.text(el);
         if (t && t.length < 80) statTexts.add(t);
       });
@@ -215,8 +264,9 @@ const SCRAPER_UTILS = {
     ];
     for (const sel of descSelectors) {
       const el = card.querySelector(sel);
+      if (!el || this.isInPricingSnapshot(el)) continue;
       const description = this.text(el);
-      if (description && description.length > 40) {
+      if (description && description.length > 40 && !this.isClutchPricingNoise(description)) {
         details.description = description;
         break;
       }
@@ -232,13 +282,16 @@ const SCRAPER_UTILS = {
   /** Longest prose block in a listing card (Clutch AI summary, G2 blurb, etc.). */
   extractLongestNarrative(card, minLen = 60) {
     let best = "";
-    const skip = "button, a, h1, h2, h3, h4, nav, .rating-reviews, .module-list, [class*='chart'], [class*='legend']";
+    const skip =
+      "button, a, h1, h2, h3, h4, nav, .rating-reviews, .module-list, [class*='chart'], [class*='legend'], .pricing-snapshot, [class*='pricing-snapshot']";
     card.querySelectorAll("p, div, span").forEach((el) => {
       if (el.closest(skip)) return;
+      if (this.isInPricingSnapshot(el)) return;
       if (el.querySelector("p, div")) return;
       const t = this.text(el);
       if (t.length <= best.length || t.length < minLen) return;
       if (/^(view profile|visit website|see all|read more)$/i.test(t)) return;
+      if (this.isClutchPricingNoise(t)) return;
       best = t;
     });
     return best || null;
@@ -250,16 +303,100 @@ const SCRAPER_UTILS = {
       ".chart-legend li",
       ".services-chart li",
       "[class*='service-focus'] li",
-      "[class*='service-line']",
+      "[class*='provider-service']",
+      "[class*='services-list'] li",
     ];
     for (const sel of selectors) {
       card.querySelectorAll(sel).forEach((el) => {
-        const t = this.text(el);
-        if (t && !parts.includes(t)) parts.push(t);
+        if (this.isInPricingSnapshot(el)) return;
+        const fromData = el.getAttribute?.("data-service-line");
+        const t =
+          fromData && fromData !== "all" && this.isLikelyCategoryText(fromData)
+            ? fromData
+            : this.text(el);
+        if (t && this.isLikelyCategoryText(t) && !parts.includes(t)) parts.push(t);
       });
       if (parts.length) break;
     }
     return parts.slice(0, 3).join(" · ");
+  },
+
+  buildClutchCategory(card) {
+    const tagline = this.firstText(card, [
+      ".tagline",
+      ".company-tagline",
+      "p.tagline",
+      ".profile-summary__tagline",
+      ".profile-header__tagline",
+    ]);
+    const services = this.extractServiceFocus(card);
+    const candidates = [tagline, services].filter((t) => this.isLikelyCategoryText(t));
+    if (!candidates.length) return "Agency / Dev Shop";
+    let category = candidates[0];
+    if (candidates[1] && category.length + 3 + candidates[1].length <= this.MAX_CATEGORY_LENGTH) {
+      category = `${category} · ${candidates[1]}`;
+    }
+    return this.truncateCategory(category) || "Agency / Dev Shop";
+  },
+
+  isClutchProfilePage() {
+    return /clutch\.co\/profile\//i.test(location.pathname);
+  },
+
+  extractClutchProfilePage() {
+    const profileUrl = location.href.split("#")[0].split("?")[0];
+    if (!profileUrl.includes("/profile/")) return [];
+
+    const name =
+      this.firstText(document, [
+        "h1.profile-header__title",
+        "h1.company-title",
+        ".profile-header h1",
+        "h1",
+      ]) || this.nameFromClutchProfileUrl(profileUrl);
+    if (!this.isLikelyCompanyName(name)) return [];
+
+    const root =
+      document.querySelector(".profile_header, .profile-header, .profile-summary, main") ||
+      document.body;
+    const tagline = this.firstText(root, [
+      ".profile-summary__tagline",
+      ".profile-header__tagline",
+      ".tagline",
+      "p.tagline",
+    ]);
+    const listing = this.extractAgencyListingDetails(root);
+    const category = this.buildClutchCategory(root) !== "Agency / Dev Shop"
+      ? this.buildClutchCategory(root)
+      : this.isLikelyCategoryText(tagline)
+        ? tagline
+        : "Agency / Dev Shop";
+
+    const website = this.firstHref(document, [
+      "a.visit-website",
+      "a[data-link-type='website']",
+      "a[href*='utm_source=clutch']",
+    ]);
+
+    return [
+      {
+        externalId: profileUrl,
+        name,
+        profileUrl,
+        website: website && !website.includes("clutch.co") ? website : null,
+        address: this.labeledFieldValue(root, ["location", "headquarters"]) || null,
+        category,
+        industry: "Software Development",
+        rating: this.parseNumber(
+          this.firstText(root, ["span[itemprop='ratingValue']", ".rating", "[class*='rating']"])
+        ) || null,
+        reviews: this.parseInt(this.firstText(root, ["[itemprop='reviewCount']", ".reviews-count"])),
+        description: listing.description,
+        hourlyRate: listing.hourlyRate,
+        minProjectSize: listing.minProjectSize,
+        employeeRange: listing.employeeRange,
+      },
+    ];
   },
 };
 

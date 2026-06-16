@@ -1,4 +1,5 @@
 import type { TechLead } from "./tech-leads";
+import { sanitizeCategory } from "./category";
 import { readHttpError, sourceError, type SourceFetchResult } from "./source-fetch";
 
 const PH_API = "https://api.producthunt.com/v2/api/graphql";
@@ -110,7 +111,9 @@ export async function fetchProductHuntByTopics(
         address: null,
         email: null,
         phone: null,
-        category: topicNames.length ? topicNames.join(", ") : `Product Hunt · ${topic}`,
+        category: sanitizeCategory(
+          topicNames.length ? topicNames.join(", ") : `Product Hunt · ${topic}`
+        ),
         industry,
         reviews: post.votesCount ?? 0,
         rating: null,

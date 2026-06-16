@@ -10,6 +10,7 @@ import {
   type Industry,
 } from "@/lib/constants";
 import { fetchLeadsForIndustry } from "@/lib/industry-search";
+import { sanitizeCategory } from "@/lib/category";
 import {
   DEFAULT_SEARCH_SOURCES,
   formatSourceKey,
@@ -60,7 +61,7 @@ async function processLeadsToBusinesses(
       website: lead.website,
       rating: lead.rating,
       reviews: lead.reviews,
-      category: lead.category,
+      category: sanitizeCategory(lead.category),
       industry: lead.industry,
       size,
       lat: null as number | null,

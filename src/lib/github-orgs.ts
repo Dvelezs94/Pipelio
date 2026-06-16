@@ -1,4 +1,5 @@
 import type { TechLead } from "./tech-leads";
+import { sanitizeCategory } from "./category";
 import { readHttpError, sourceError, type SourceFetchResult } from "./source-fetch";
 
 const GITHUB_API = "https://api.github.com";
@@ -112,7 +113,7 @@ export async function fetchGitHubOrgsByKeywords(
         address: org.location ?? null,
         email: org.email ?? null,
         phone: null,
-        category: org.description ?? "GitHub Organization",
+        category: sanitizeCategory(org.description ?? "GitHub Organization"),
         industry,
         reviews: org.public_repos ?? 0,
         rating: null,

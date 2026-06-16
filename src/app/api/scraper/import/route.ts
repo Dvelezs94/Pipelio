@@ -14,7 +14,7 @@ const companySchema = z.object({
   address: z.string().nullable().optional(),
   email: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
-  category: z.string().nullable().optional(),
+  category: z.string().max(50).nullable().optional(),
   industry: z.string().nullable().optional(),
   reviews: z.number().int().nonnegative().optional(),
   rating: z.number().nullable().optional(),

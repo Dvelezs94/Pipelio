@@ -1,4 +1,5 @@
 import type { TechLead } from "./tech-leads";
+import { sanitizeCategory } from "./category";
 import { readHttpError, sourceError, type SourceFetchResult } from "./source-fetch";
 
 const APIFY_ACTOR = "curious_coder~clutch-scraper";
@@ -55,7 +56,7 @@ function mapClutchItem(item: ApifyClutchItem, industry: string): TechLead | null
   const ratingRaw = parseNumber(item.rating);
   const phone = Array.isArray(item.phone) ? item.phone[0]?.trim() || null : item.phone?.trim() || null;
   const description = item.summary?.trim() || item.tagline?.trim() || null;
-  const category = item.tagline?.trim() || "Clutch listing";
+  const category = sanitizeCategory(item.tagline?.trim() || "Clutch listing");
 
   return {
     externalId,

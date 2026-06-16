@@ -27,12 +27,14 @@
       industry: "Software Development",
       extract() {
         const u = U();
+        if (u.isClutchProfilePage()) {
+          return u.extractClutchProfilePage();
+        }
+
         const cards = u.queryAll([
           "li.provider-row",
           "div.provider-row",
           "article.provider",
-          "[id^='provider-']",
-          "div[class*='provider-row']",
         ]);
         const results = [];
         const seenProfiles = new Set();
@@ -75,9 +77,10 @@
             u.labeledFieldValue(card, ["location", "headquarters"]);
           const tagline = u.firstText(card, [".tagline", ".company-tagline", "p.tagline"]);
           const listing = u.extractAgencyListingDetails(card);
-          const services = u.extractServiceFocus(card);
-          const categoryParts = [tagline, services].filter(Boolean);
-          const category = categoryParts.length ? categoryParts.join(" · ") : "Agency / Dev Shop";
+          const category = u.buildClutchCategory(card);
+          const safeTagline = u.isLikelyCategoryText(tagline) ? tagline : null;
+          const finalCategory =
+            category !== "Agency / Dev Shop" ? category : safeTagline || "Agency / Dev Shop";
 
           results.push({
             externalId: profileUrl,
@@ -85,7 +88,7 @@
             profileUrl,
             website: website && !website.includes("clutch.co") ? website : null,
             address: location || null,
-            category,
+            category: finalCategory,
             industry: "Software Development",
             rating: u.parseNumber(ratingRaw) || null,
             reviews: u.parseInt(reviewsRaw),

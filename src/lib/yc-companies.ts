@@ -1,4 +1,5 @@
 import type { TechLead } from "./tech-leads";
+import { sanitizeCategory } from "./category";
 import { readHttpError, sourceError, type SourceFetchResult } from "./source-fetch";
 
 const YC_API = "https://yc-oss.github.io/api/companies/all.json";
@@ -90,7 +91,7 @@ export async function fetchYcByIndustry(
       address: company.regions?.join(", ") ?? null,
       email: null,
       phone: null,
-      category: company.one_liner ?? company.industry ?? "YC Company",
+      category: sanitizeCategory(company.one_liner ?? company.industry ?? "YC Company"),
       industry,
       reviews: 0,
       rating: null,

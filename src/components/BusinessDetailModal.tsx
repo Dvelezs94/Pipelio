@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ListingProfileLink, ListingSearchOrigin } from "@/components/ListingSourceLinks";
 import { resolveBusinessSourceUrl, sourceLabelForBusiness } from "@/lib/listing-source";
+import { displayCategory } from "@/lib/category";
 import {
   ExternalLink,
   Linkedin,
@@ -127,7 +128,7 @@ export function BusinessDetailModal({
                 {display(business.industry)}
               </DetailRow>
               <DetailRow label="Category" className="sm:col-span-2">
-                {display(business.category)}
+                {displayCategory(business.category)}
               </DetailRow>
               <DetailRow label="Location" className="sm:col-span-2">
                 {display(business.address)}

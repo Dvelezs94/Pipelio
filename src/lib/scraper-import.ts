@@ -6,6 +6,7 @@ import {
   extractDomain,
   type TechLead,
 } from "@/lib/tech-leads";
+import { isBadCategory, MAX_CATEGORY_LENGTH, sanitizeCategory } from "@/lib/category";
 
 export const BROWSER_EXTENSION_SOURCES = [
   "clutch",
@@ -92,7 +93,7 @@ function toTechLead(source: string, company: ScrapedCompanyInput): TechLead | nu
     address: company.address?.trim() || null,
     email: company.email?.trim() || null,
     phone: company.phone?.trim() || null,
-    category: company.category?.trim() || null,
+    category: sanitizeCategory(company.category?.trim()),
     industry: company.industry?.trim() || "SaaS / Software",
     reviews: Math.max(0, company.reviews ?? 0),
     rating: company.rating ?? null,
@@ -195,7 +196,14 @@ function mergeEnrichment(
   pick("hourlyRate", incoming.hourlyRate);
   pick("minProjectSize", incoming.minProjectSize);
   pick("employeeRange", incoming.employeeRange);
-  pick("category", incoming.category);
+  const nextCategory = sanitizeCategory(incoming.category);
+  const existingCategoryInvalid =
+    isBadCategory(existing.category) ||
+    !existing.category?.trim() ||
+    (existing.category?.trim().length ?? 0) > MAX_CATEGORY_LENGTH;
+  if (nextCategory && existingCategoryInvalid) {
+    data.category = nextCategory;
+  }
   pick("address", incoming.address);
   pick("phone", incoming.phone);
   pick("email", incoming.email);
