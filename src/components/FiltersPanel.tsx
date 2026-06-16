@@ -23,8 +23,8 @@ export interface FiltersState {
   hasWebsite: HasWebsiteFilter;
   hasPhone: boolean;
   search: string;
-  /** When true, include dismissed businesses in the list (unchecked by default = hide dismissed) */
-  showDismissed: boolean;
+  /** When true, hide dismissed businesses from the list (they stay visible but greyed by default) */
+  hideDismissed: boolean;
 }
 
 const DEFAULT_FILTERS: FiltersState = {
@@ -34,7 +34,7 @@ const DEFAULT_FILTERS: FiltersState = {
   hasWebsite: "any",
   hasPhone: false,
   search: "",
-  showDismissed: false,
+  hideDismissed: false,
 };
 
 export interface FiltersPanelProps {
@@ -146,12 +146,12 @@ export function FiltersPanel({ filters, onFiltersChange, onReset }: FiltersPanel
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="show-dismissed"
-              checked={filters.showDismissed}
-              onCheckedChange={(c) => update({ showDismissed: !!c })}
+              id="hide-dismissed"
+              checked={filters.hideDismissed}
+              onCheckedChange={(c) => update({ hideDismissed: !!c })}
             />
-            <label htmlFor="show-dismissed" className="text-sm">
-              Show dismissed
+            <label htmlFor="hide-dismissed" className="text-sm">
+              Hide dismissed
             </label>
           </div>
         </div>

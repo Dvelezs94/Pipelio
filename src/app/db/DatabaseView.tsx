@@ -52,7 +52,7 @@ function buildApiUrl(params: {
   minRating: string;
   hasWebsite: "any" | "true" | "false";
   hasPhone: boolean;
-  includeDismissed: boolean;
+  hideDismissed: boolean;
   excludeInCrm: boolean;
   sortBy: string;
   sortOrder: string;
@@ -69,7 +69,7 @@ function buildApiUrl(params: {
   if (params.minRating) u.searchParams.set("minRating", params.minRating);
   if (params.hasWebsite && params.hasWebsite !== "any") u.searchParams.set("hasWebsite", params.hasWebsite);
   if (params.hasPhone) u.searchParams.set("hasPhone", "true");
-  if (params.includeDismissed) u.searchParams.set("includeDismissed", "true");
+  if (params.hideDismissed) u.searchParams.set("hideDismissed", "true");
   if (params.excludeInCrm) u.searchParams.set("excludeInCrm", "true");
   return u.toString();
 }
@@ -81,7 +81,7 @@ type AppliedFilters = {
   minRating: string;
   hasWebsite: "any" | "true" | "false";
   hasPhone: boolean;
-  includeDismissed: boolean;
+  hideDismissed: boolean;
   excludeInCrm: boolean;
   sortBy: string;
   sortOrder: "asc" | "desc";
@@ -94,7 +94,7 @@ const DEFAULT_FILTERS: AppliedFilters = {
   minRating: "",
   hasWebsite: "any",
   hasPhone: false,
-  includeDismissed: false,
+  hideDismissed: false,
   excludeInCrm: false,
   sortBy: "name",
   sortOrder: "asc",
@@ -124,7 +124,7 @@ export function DatabaseView() {
       applied.minRating,
       applied.hasWebsite,
       applied.hasPhone,
-      applied.includeDismissed,
+      applied.hideDismissed,
       applied.excludeInCrm,
       applied.sortBy,
       applied.sortOrder,
@@ -152,10 +152,28 @@ export function DatabaseView() {
 
   const handleDismiss = useCallback(async (businessId: string, isDismissed: boolean) => {
     setDismissingId(businessId);
+    const nextDismissedAt = isDismissed ? null : new Date().toISOString();
     try {
       const res = isDismissed ? await undismissBusiness(businessId) : await dismissBusiness(businessId);
-      if (res.success) mutate();
-      else alert(res.error);
+      if (res.success) {
+        mutate(
+          (current) => {
+            if (!current) return current;
+            return {
+              ...current,
+              businesses: current.businesses.map((b) =>
+                b.id === businessId ? { ...b, dismissedAt: nextDismissedAt } : b
+              ),
+            };
+          },
+          { revalidate: false }
+        );
+        setDetailBusiness((prev) =>
+          prev?.id === businessId ? { ...prev, dismissedAt: nextDismissedAt } : prev
+        );
+      } else {
+        alert(res.error);
+      }
     } finally {
       setDismissingId(null);
     }
@@ -198,7 +216,7 @@ export function DatabaseView() {
             <div>
               <h1 className="text-xl font-semibold text-foreground">Database</h1>
               <p className="text-sm text-muted-foreground">
-                {applied.search.trim() || applied.industry !== "__any__" || applied.size !== "__any__" || applied.minRating || applied.hasWebsite !== "any" || applied.hasPhone || applied.includeDismissed || applied.excludeInCrm
+                {applied.search.trim() || applied.industry !== "__any__" || applied.size !== "__any__" || applied.minRating || applied.hasWebsite !== "any" || applied.hasPhone || applied.hideDismissed || applied.excludeInCrm
                   ? `${pagination.total} matching`
                   : `${pagination.total} total`}
                 {isValidating ? " · loading…" : ""}
@@ -294,8 +312,17 @@ export function DatabaseView() {
                   Has phone
                 </label>
                 <label className="flex items-center gap-2 text-sm">
-                  <Checkbox checked={draft.includeDismissed} onCheckedChange={(c) => updateDraft({ includeDismissed: !!c })} />
-                  Show dismissed
+                  <Checkbox
+                    checked={draft.hideDismissed}
+                    onCheckedChange={(c) => {
+                      const hideDismissed = !!c;
+                      const next = { ...draft, hideDismissed };
+                      setDraft(next);
+                      setApplied(next);
+                      setPage(1);
+                    }}
+                  />
+                  Hide dismissed
                 </label>
               </div>
               <div className="flex items-center gap-2">
@@ -348,7 +375,7 @@ export function DatabaseView() {
             ) : (
               <>
                 <div className="rounded-md border overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="business-results-table w-full text-sm">
                     <thead>
                       <tr className="border-b bg-muted/50">
                         <th className="text-left p-3 font-medium">Business</th>
@@ -367,7 +394,11 @@ export function DatabaseView() {
                     </thead>
                     <tbody>
                       {businesses.map((b) => (
-                        <tr key={b.id} className="border-b hover:bg-muted/30">
+                        <tr
+                          key={b.id}
+                          data-dismissed={b.dismissedAt ? "true" : "false"}
+                          className="border-b hover:bg-muted/30"
+                        >
                           <td className="p-3 font-medium">
                             <button
                               type="button"
@@ -452,7 +483,7 @@ export function DatabaseView() {
                               className="gap-1 text-muted-foreground hover:text-foreground"
                               disabled={dismissingId === b.id}
                               onClick={() => handleDismiss(b.id, !!b.dismissedAt)}
-                              title={b.dismissedAt ? "Show again" : "Hide from list"}
+                              title={b.dismissedAt ? "Restore to list" : "Dismiss (grey out)"}
                             >
                               {dismissingId === b.id ? "..." : b.dismissedAt ? <><Eye className="h-3 w-3" /> Undismiss</> : <><EyeOff className="h-3 w-3" /> Dismiss</>}
                             </Button>

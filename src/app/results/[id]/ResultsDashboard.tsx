@@ -155,7 +155,7 @@ export function ResultsDashboard({
 
   const filtered = useMemo(() => {
     let list = businesses;
-    if (!filters.showDismissed) list = list.filter((b) => !b.dismissedAt);
+    if (filters.hideDismissed) list = list.filter((b) => !b.dismissedAt);
     if (filters.industry) list = list.filter((b) => b.industry === filters.industry);
     if (filters.size) list = list.filter((b) => b.size === filters.size);
     if (filters.minRating) {
@@ -330,7 +330,8 @@ export function ResultsDashboard({
                       <div
                         className={cn(
                           "flex items-center justify-between gap-2 py-1 px-2 rounded-md border-l-[3px]",
-                          visitedItemClasses(isVisited(b.id), isLastVisited(b.id))
+                          visitedItemClasses(isVisited(b.id), isLastVisited(b.id)),
+                          b.dismissedAt && "opacity-60 bg-muted/40 text-muted-foreground"
                         )}
                       >
                         <span>{b.name}</span>

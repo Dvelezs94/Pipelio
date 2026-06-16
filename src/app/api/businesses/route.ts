@@ -38,12 +38,12 @@ export async function GET(request: NextRequest) {
   const sortBy = searchParams.get("sortBy") ?? "name";
   const sortOrder = searchParams.get("sortOrder") === "desc" ? "desc" : "asc";
   const includeZipSearch = searchParams.get("includeZipSearch") === "true";
-  const includeDismissed = searchParams.get("includeDismissed") === "true";
+  const hideDismissed = searchParams.get("hideDismissed") === "true";
   const excludeInCrm = searchParams.get("excludeInCrm") === "true";
 
   const where: BusinessWhere = { workspaceId };
   if (zipSearchId) where.zipSearchId = zipSearchId;
-  if (!includeDismissed) where.dismissedAt = null;
+  if (hideDismissed) where.dismissedAt = null;
   if (excludeInCrm) {
     const inCrmIds = await prisma.crmLead
       .findMany({

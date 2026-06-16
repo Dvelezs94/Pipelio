@@ -64,7 +64,19 @@ body {
   }
 }
 
-/* Visited business rows in search results — Tailwind opacity on var(--primary) hex does not work */
+/* Dismissed business rows — muted/greyed but still visible */
+.business-results-table tbody tr[data-dismissed="true"] td {
+  color: color-mix(in srgb, var(--muted-foreground) 85%, var(--foreground));
+  background-color: color-mix(in srgb, var(--muted) 55%, var(--card)) !important;
+}
+.business-results-table tbody tr[data-dismissed="true"] {
+  opacity: 0.72;
+  box-shadow: inset 3px 0 0 0 var(--muted-foreground);
+}
+.business-results-table tbody tr[data-dismissed="true"] a:not(:hover) {
+  color: var(--muted-foreground);
+}
+
 .business-results-table tbody tr[data-visited="true"] td {
   background-color: color-mix(in srgb, var(--primary) 28%, var(--card)) !important;
 }

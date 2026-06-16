@@ -16,6 +16,7 @@ export async function dismissBusiness(businessId: string): Promise<DismissResult
     });
     revalidatePath("/db");
     revalidatePath("/");
+    revalidatePath("/results", "layout");
     return { success: true };
   } catch (e) {
     console.error("dismissBusiness", e);
@@ -33,6 +34,7 @@ export async function undismissBusiness(businessId: string): Promise<DismissResu
     });
     revalidatePath("/db");
     revalidatePath("/");
+    revalidatePath("/results", "layout");
     return { success: true };
   } catch (e) {
     console.error("undismissBusiness", e);

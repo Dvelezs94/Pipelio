@@ -52,4 +52,5 @@ export interface BusinessFilters {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
   includeDismissed?: boolean;
+  hideDismissed?: boolean;
 }

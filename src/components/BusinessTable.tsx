@@ -64,6 +64,7 @@ export function BusinessTable({
   const [savingId, setSavingId] = useState<string | null>(null);
   const [dismissingId, setDismissingId] = useState<string | null>(null);
   const [detailBusiness, setDetailBusiness] = useState<BusinessRecord | null>(null);
+  const [dismissedOverrides, setDismissedOverrides] = useState<Record<string, string | null>>({});
   const [visitedIds, setVisitedIds] = useState<Set<string>>(() => new Set());
   const [lastVisitedId, setLastVisitedId] = useState<string | null>(null);
 
@@ -118,14 +119,22 @@ export function BusinessTable({
 
   const handleDismiss = async (businessId: string, isDismissed: boolean) => {
     setDismissingId(businessId);
+    const nextDismissedAt = isDismissed ? null : new Date().toISOString();
     try {
       const res = isDismissed ? await undismissBusiness(businessId) : await dismissBusiness(businessId);
-      if (res.success) onDismissChange?.();
-      else alert(res.error);
+      if (res.success) {
+        setDismissedOverrides((prev) => ({ ...prev, [businessId]: nextDismissedAt }));
+        onDismissChange?.();
+      } else {
+        alert(res.error);
+      }
     } finally {
       setDismissingId(null);
     }
   };
+
+  const dismissedAtFor = (b: BusinessRecord) =>
+    dismissedOverrides[b.id] !== undefined ? dismissedOverrides[b.id] : b.dismissedAt ?? null;
 
   const filtered = useMemo(() => {
     if (!clientSide) return businesses;
@@ -282,11 +291,13 @@ export function BusinessTable({
             {pageData.map((b) => {
               const visited = isRowVisited(b.id);
               const isLast = lastVisitedId === b.id;
+              const dismissedAt = dismissedAtFor(b);
               return (
               <tr
                 key={b.id}
                 data-visited={visited ? "true" : "false"}
                 data-last-visited={isLast ? "true" : "false"}
+                data-dismissed={dismissedAt ? "true" : "false"}
                 className="border-b"
               >
                 <td className="p-3 font-medium">
@@ -388,12 +399,12 @@ export function BusinessTable({
                       size="sm"
                       className="gap-1 text-muted-foreground hover:text-foreground"
                       disabled={dismissingId === b.id}
-                      onClick={() => handleDismiss(b.id, !!b.dismissedAt)}
-                      title={b.dismissedAt ? "Show again" : "Hide from list"}
+                      onClick={() => handleDismiss(b.id, !!dismissedAt)}
+                      title={dismissedAt ? "Restore to list" : "Dismiss (grey out)"}
                     >
                       {dismissingId === b.id ? (
                         "..."
-                      ) : b.dismissedAt ? (
+                      ) : dismissedAt ? (
                         <>
                           <Eye className="h-3 w-3" />
                           Undismiss
