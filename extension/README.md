@@ -40,3 +40,14 @@ All routes require header `x-scraper-key: plk_…` (your personal key).
 - Each API key is tied to your user account and only accesses your projects.
 - Revoke keys anytime from Pipelio → Extension settings.
 - Reload listing tabs after changing extension settings.
+- **Imports go to Database**, not CRM. Open **Database** in the nav to see scraped companies; use **Save to CRM** when you want them in the pipeline.
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| Badge says "Found N…" but nothing in the app | Reload the extension, **Connect**, pick a **project**, reload the Clutch tab, scrape again. You should see "Sending…" then "Done: X new…". |
+| Nothing in CRM | Expected — extension imports to **Database** only. |
+| Wrong app / empty Database | App URL in the popup must match where you sign in (`http://localhost:3000` for local dev, or your Vercel URL for production). |
+| Red badge error | Read the message: set API key, select project, or fix connection. |
+| Green outlines but no import (old session) | Full **reload** the listing page after updating the extension so cards can be scraped again. |

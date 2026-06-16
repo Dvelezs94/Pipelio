@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { NavBar } from "@/components/NavBar";
 import { getCurrentUser } from "@/lib/auth";
-import { APP_DESCRIPTION, appTitle } from "@/lib/brand";
+import { APP_DESCRIPTION, APP_NAME, appTitle } from "@/lib/brand";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -19,6 +19,11 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: appTitle(),
   description: APP_DESCRIPTION,
+  applicationName: APP_NAME,
+  icons: {
+    icon: [{ url: "/pipelio-logo.png", type: "image/png" }],
+    apple: [{ url: "/pipelio-logo.png", type: "image/png" }],
+  },
 };
 
 export default async function RootLayout({

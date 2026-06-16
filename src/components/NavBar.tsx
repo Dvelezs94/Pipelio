@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
+import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { APP_NAME } from "@/lib/brand";
 import { logout } from "@/app/actions/auth";
 import type { AuthUser } from "@/lib/auth";
 import { LogOut } from "lucide-react";
@@ -36,12 +36,7 @@ export function NavBar({ user }: { user: AuthUser | null }) {
   return (
     <nav className="border-b bg-card px-4 py-2">
       <div className="container mx-auto flex items-center gap-2">
-        <Link
-          href={user ? "/" : "/login"}
-          className="text-sm font-semibold text-primary tracking-tight shrink-0 mr-1"
-        >
-          {APP_NAME}
-        </Link>
+        <Logo href={user ? "/" : "/login"} size="sm" className="mr-1" />
         {!isAuthPage && user && <WorkspaceSwitcher />}
         <div className="flex items-center gap-2 flex-1">
           {!isAuthPage &&

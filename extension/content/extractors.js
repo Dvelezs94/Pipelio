@@ -31,32 +31,44 @@
           "li.provider-row",
           "div.provider-row",
           "article.provider",
-          "[class*='provider-row']",
-          ".company-info",
           "div[data-company-id]",
+          "a.directory_profile",
+          "a[href*='/profile/']",
         ]);
         const results = [];
+        const seenProfiles = new Set();
+
         for (const card of cards) {
           if (u.isSent(card)) continue;
-          const name = u.firstText(card, [
-            "h3.company-title a",
-            "h3 a",
-            ".company-title",
-            "a.company-name",
-            "[class*='company-title'] a",
-          ]);
-          if (!name) continue;
-          const profileUrl = u.firstHref(card, [
-            "h3.company-title a",
-            "h3 a",
-            "a.company-name",
-            "a[href*='/profile/']",
-          ]);
+
+          const link =
+            card.tagName === "A" && card.href?.includes("/profile/")
+              ? card
+              : card.querySelector("a[href*='/profile/'], a.directory_profile, h3 a, h2 a");
+
+          const name = link
+            ? u.text(link)
+            : u.firstText(card, [
+                "h3.company-title a",
+                "h3 a",
+                ".company-title",
+                "a.company-name",
+                "[class*='company-title'] a",
+              ]);
+
+          if (!name || name.length < 2) continue;
+
+          const profileUrl = link
+            ? u.absUrl(link.href)
+            : u.firstHref(card, ["h3.company-title a", "h3 a", "a[href*='/profile/']"]);
+
+          if (profileUrl && seenProfiles.has(profileUrl)) continue;
+          if (profileUrl) seenProfiles.add(profileUrl);
+
           const website = u.firstHref(card, [
             "a[href*='website']",
             "a.visit-website",
             "a[data-link-type='website']",
-            "a[rel='nofollow noopener'][target='_blank']",
           ]);
           const ratingRaw = u.firstText(card, [
             ".rating",
@@ -65,14 +77,14 @@
           ]);
           const reviewsRaw = u.firstText(card, [
             ".reviews-count",
-            "[class*='review']",
+            "[class*='review-count']",
             "span[itemprop='reviewCount']",
           ]);
           const location = u.firstText(card, [".locality", ".location", "[class*='location']"]);
           const category = u.firstText(card, [".tagline", ".categories", "[class*='tagline']"]);
 
           results.push({
-            externalId: profileUrl,
+            externalId: profileUrl || `clutch:name:${name.toLowerCase().slice(0, 60)}`,
             name,
             profileUrl,
             website: website && !website.includes("clutch.co") ? website : null,

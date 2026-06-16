@@ -7,8 +7,13 @@
   </head>
   <body>
     <header>
-      <h1>Pipelio</h1>
-      <p class="subtitle">Listing scraper</p>
+      <div class="brand-row">
+        <img src="../icons/icon48.png" alt="" width="28" height="28" class="logo" />
+        <div>
+          <h1>Pipelio</h1>
+          <p class="subtitle">Listing scraper</p>
+        </div>
+      </div>
     </header>
 
     <section class="card">
@@ -36,7 +41,7 @@
     </section>
 
     <section class="card">
-      <p id="pageInfo" class="muted">Open a listing page to scrape.</p>
+      <p id="pageInfo" class="muted">Open a listing page to scrape. Imports appear in Pipelio → Database (not CRM until you save).</p>
       <button id="scrapeNow" type="button" class="full">Scrape this page now</button>
       <p id="stats" class="stats muted"></p>
       <p id="status" class="status"></p>

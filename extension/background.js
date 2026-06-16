@@ -53,12 +53,29 @@ async function sendBatch(payload) {
     return { ok: false, error: "No project selected. Open the extension popup and choose a project." };
   }
 
+  const companies = (payload.companies || [])
+    .map((c) => ({
+      ...c,
+      name: String(c.name || "").trim(),
+      rating:
+        typeof c.rating === "number" && Number.isFinite(c.rating) ? c.rating : null,
+      reviews:
+        typeof c.reviews === "number" && Number.isFinite(c.reviews)
+          ? Math.max(0, Math.floor(c.reviews))
+          : 0,
+    }))
+    .filter((c) => c.name.length >= 2);
+
+  if (companies.length === 0) {
+    return { ok: false, error: "No valid companies in batch." };
+  }
+
   const body = {
     source: payload.source,
     pageUrl: payload.pageUrl,
     searchLabel: payload.searchLabel,
     workspaceId,
-    companies: payload.companies,
+    companies,
   };
 
   return apiFetch("/api/scraper/import", {

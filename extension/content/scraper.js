@@ -14,13 +14,14 @@
         position: fixed; bottom: 16px; right: 16px; z-index: 2147483646;
         background: #0f766e; color: #f0fdfa; font: 12px/1.4 system-ui, sans-serif;
         padding: 8px 12px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.2);
-        max-width: 280px; pointer-events: none;
+        max-width: 320px; pointer-events: none;
       }
+      #cr-scraper-badge.err { background: #b91c1c; }
     `;
     document.documentElement.appendChild(style);
   }
 
-  function showBadge(text) {
+  function showBadge(text, isError = false) {
     injectStyles();
     let el = document.getElementById("cr-scraper-badge");
     if (!el) {
@@ -29,12 +30,15 @@
       document.documentElement.appendChild(el);
     }
     el.textContent = text;
+    el.classList.toggle("err", isError);
   }
 
   let pending = [];
   let lastRun = 0;
   let debounceTimer = null;
   let observer = null;
+  let scrapeDebounce = null;
+  let flushing = false;
 
   function getConfig() {
     return new Promise((resolve) => {
@@ -45,7 +49,7 @@
           apiKey: stored.apiKey || base.API_KEY || "",
           workspaceId: stored.workspaceId ?? base.WORKSPACE_ID ?? "",
           autoScrape: stored.autoScrape ?? base.AUTO_SCRAPE ?? true,
-          sendIntervalSec: stored.sendIntervalSec ?? base.SEND_INTERVAL_SEC ?? 8,
+          sendIntervalSec: stored.sendIntervalSec ?? base.SEND_INTERVAL_SEC ?? 3,
         });
       });
     });
@@ -62,81 +66,140 @@
     }
   }
 
-  async function flushQueue(force = false) {
+  function sendBatch(batch, config) {
+    const extractor = globalThis.detectScraperExtractor?.();
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(
+        {
+          type: "SCRAPE_BATCH",
+          payload: {
+            source: extractor?.id || "generic",
+            searchLabel: document.title,
+            pageUrl: location.href,
+            companies: batch,
+            workspaceId: config.workspaceId,
+          },
+        },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            resolve({ ok: false, error: chrome.runtime.lastError.message || "Extension error" });
+            return;
+          }
+          resolve(response || { ok: false, error: "No response from extension" });
+        }
+      );
+    });
+  }
+
+  async function flushQueue(options = {}) {
+    const { force = false, drain = false } = options;
+    if (flushing && !force) return;
+
     const config = await getConfig();
-    if (!config.autoScrape && !force) return;
-    if (!config.apiKey || !config.workspaceId) return;
+    if (!config.apiKey) {
+      showBadge("Set API key in extension popup", true);
+      return;
+    }
+    if (!config.workspaceId) {
+      showBadge("Select a project in extension popup", true);
+      return;
+    }
     if (pending.length === 0) return;
 
     const now = Date.now();
-    const minGap = (config.sendIntervalSec || 8) * 1000;
-    if (!force && now - lastRun < minGap) return;
+    const minGap = (config.sendIntervalSec || 3) * 1000;
+    if (!force && !drain && now - lastRun < minGap) return;
 
+    flushing = true;
     const batchSize = globalThis.EXTENSION_CONFIG?.BATCH_SIZE || 25;
-    const batch = pending.splice(0, batchSize);
-    lastRun = now;
+    let totalImported = 0;
+    let totalSkipped = 0;
+    let lastError = null;
 
-    const extractor = globalThis.detectScraperExtractor?.();
-    chrome.runtime.sendMessage(
-      {
-        type: "SCRAPE_BATCH",
-        payload: {
-          source: extractor?.id || "generic",
-          searchLabel: document.title,
-          pageUrl: location.href,
-          companies: batch,
-          workspaceId: config.workspaceId || undefined,
-        },
-      },
-      (response) => {
-        if (chrome.runtime.lastError) {
-          showBadge("Scraper: extension error");
+    try {
+      do {
+        if (pending.length === 0) break;
+
+        const batch = pending.splice(0, batchSize);
+        lastRun = Date.now();
+        const extractor = globalThis.detectScraperExtractor?.();
+
+        showBadge(`Sending ${batch.length} to Pipelio… (${pending.length} queued)`);
+
+        const response = await sendBatch(batch, config);
+
+        if (!response?.ok) {
+          lastError = response?.error || "Send failed";
           pending.unshift(...batch);
-          return;
+          showBadge(`Error: ${lastError}`, true);
+          break;
         }
-        if (response?.ok) {
-          showBadge(`Sent ${response.imported} new · ${response.skipped} dupes (${extractor?.label || "page"})`);
-          chrome.runtime.sendMessage({ type: "STATS_UPDATE", payload: response });
-        } else {
-          showBadge(`Error: ${response?.error || "send failed"}`);
-          pending.unshift(...batch);
+
+        totalImported += response.imported || 0;
+        totalSkipped += response.skipped || 0;
+        chrome.runtime.sendMessage({ type: "STATS_UPDATE", payload: response });
+
+        if (pending.length > 0) {
+          showBadge(`Sent +${response.imported} · ${pending.length} left…`);
+          await new Promise((r) => setTimeout(r, 400));
+        }
+      } while (drain && pending.length > 0);
+
+      if (!lastError) {
+        const extractor = globalThis.detectScraperExtractor?.();
+        if (totalImported + totalSkipped > 0) {
+          showBadge(
+            `Done: ${totalImported} new, ${totalSkipped} duplicates (${extractor?.label || "page"})`
+          );
+        } else if (pending.length === 0) {
+          showBadge(`Nothing new to import (${extractor?.label || "page"})`);
         }
       }
-    );
+    } finally {
+      flushing = false;
+    }
   }
 
-  function scheduleFlush() {
+  function scheduleFlush(drain = false) {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => flushQueue(false), 1500);
+    debounceTimer = setTimeout(() => flushQueue({ force: true, drain }), drain ? 300 : 800);
   }
 
   async function scrapeNow(force = false) {
     const config = await getConfig();
+
     if (!config.autoScrape && !force) {
-      showBadge("Auto-scrape paused");
+      showBadge("Auto-scrape paused — use extension popup");
       return;
     }
     if (!config.apiKey || !config.workspaceId) {
-      if (force) showBadge("Set API key & project in extension popup");
+      showBadge("Connect API key & project in extension popup", true);
       return;
     }
 
     const found = runScrape();
     if (found.length === 0) {
-      if (force) showBadge("No companies found on this page");
+      if (force) {
+        if (pending.length > 0) {
+          await flushQueue({ force: true, drain: true });
+        } else {
+          showBadge("No new companies on this page");
+        }
+      }
       return;
     }
 
     pending.push(...found);
     const extractor = globalThis.detectScraperExtractor?.();
-    showBadge(`Found ${found.length} on ${extractor?.label || "page"}…`);
-    scheduleFlush();
+    showBadge(`Found ${found.length} · sending to Pipelio…`);
+    await flushQueue({ force: true, drain: true });
   }
 
   function startObserver() {
     if (observer) return;
     observer = new MutationObserver(() => {
-      scrapeNow(false);
+      clearTimeout(scrapeDebounce);
+      scrapeDebounce = setTimeout(() => scrapeNow(false), 2000);
     });
     observer.observe(document.body, { childList: true, subtree: true });
   }
@@ -145,12 +208,19 @@
     injectStyles();
     const config = await getConfig();
     const extractor = globalThis.detectScraperExtractor?.();
-    showBadge(`Pipelio: ${extractor?.label || "ready"}`);
+
+    if (!config.apiKey || !config.workspaceId) {
+      showBadge("Open extension → Connect & pick a project", true);
+    } else {
+      showBadge(`Pipelio ready · ${extractor?.label || "page"}`);
+    }
 
     if (config.autoScrape) {
-      setTimeout(() => scrapeNow(false), 1200);
+      setTimeout(() => scrapeNow(false), 1500);
       startObserver();
-      setInterval(() => flushQueue(false), (config.sendIntervalSec || 8) * 1000);
+      setInterval(() => {
+        if (pending.length > 0) flushQueue({ force: true, drain: true });
+      }, (config.sendIntervalSec || 3) * 1000);
     }
 
     chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {

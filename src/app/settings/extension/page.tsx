@@ -1,5 +1,6 @@
 import { ExtensionKeysPanel } from "./ExtensionKeysPanel";
 import { getScraperApiKeys } from "@/app/actions/scraper-api-keys";
+import { Logo } from "@/components/Logo";
 import { appTitle } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
@@ -15,8 +16,8 @@ export default async function ExtensionSettingsPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-xl font-semibold">Extension settings</h1>
+        <div className="container mx-auto px-4 py-4 space-y-1">
+          <Logo size="lg" href="/" />
           <p className="text-sm text-muted-foreground">
             Manage API keys for the browser scraper and connect your projects.
           </p>

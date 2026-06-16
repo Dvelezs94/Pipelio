@@ -16,6 +16,17 @@ header {
   background: #fff;
 }
 
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
 h1 {
   margin: 0;
   font-size: 15px;
