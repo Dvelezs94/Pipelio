@@ -17,6 +17,8 @@ import {
   type EmailTemplateRow,
 } from "@/app/actions/email-templates";
 import { AiTextField } from "@/components/AiTextField";
+import { TemplateVariableField } from "@/components/TemplateVariableField";
+import { invalidTemplatePlaceholders } from "@/lib/email-templates";
 import { cn } from "@/lib/utils";
 import { FileText, Plus, Trash2 } from "lucide-react";
 
@@ -65,6 +67,20 @@ export function CrmTemplatesPanel({ templates }: { templates: EmailTemplateRow[]
     if (!name.trim() || !bodyTemplate.trim()) {
       alert("Name and body template are required.");
       return;
+    }
+    const unknown = [
+      ...invalidTemplatePlaceholders(subjectTemplate),
+      ...invalidTemplatePlaceholders(bodyTemplate),
+    ];
+    if (unknown.length > 0) {
+      const unique = [...new Set(unknown)];
+      if (
+        !confirm(
+          `Unknown variables will stay blank when sending: ${unique.map((k) => `{{${k}}}`).join(", ")}. Save anyway?`
+        )
+      ) {
+        return;
+      }
     }
     setSaving(true);
     try {
@@ -142,7 +158,8 @@ export function CrmTemplatesPanel({ templates }: { templates: EmailTemplateRow[]
             <div>
               <h3 className="font-medium">{isNew ? "New template" : `Edit: ${editing?.name}`}</h3>
               <p className="text-xs text-muted-foreground mt-1">
-                Placeholders: {"{{businessName}}"}, {"{{industry}}"}, {"{{website}}"}, {"{{yourName}}"}, {"{{yourTitle}}"}, {"{{yourEmail}}"}, {"{{yourPhone}}"}, {"{{yourWebsite}}"}
+                Use insert buttons or type {"{{"} for autocomplete. Variables are filled from the lead
+                and your Proposal sender settings when the email is sent.
               </p>
             </div>
 
@@ -175,19 +192,19 @@ export function CrmTemplatesPanel({ templates }: { templates: EmailTemplateRow[]
               </div>
               <div className="sm:col-span-2">
                 <label className="text-sm font-medium text-muted-foreground block mb-1">Subject template</label>
-                <AiTextField
+                <TemplateVariableField
                   value={subjectTemplate}
                   onChange={setSubjectTemplate}
-                  context="cold email subject template with placeholders"
+                  aiContext="cold email subject template with placeholders"
                   placeholder="Subject with {{businessName}}"
                 />
               </div>
               <div className="sm:col-span-2">
                 <label className="text-sm font-medium text-muted-foreground block mb-1">Body template</label>
-                <AiTextField
+                <TemplateVariableField
                   value={bodyTemplate}
                   onChange={setBodyTemplate}
-                  context="cold email body template with placeholders"
+                  aiContext="cold email body template with placeholders"
                   placeholder="Hi {{businessName}} team..."
                   multiline
                   rows={10}

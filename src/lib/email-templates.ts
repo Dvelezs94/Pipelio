@@ -11,6 +11,92 @@ export type TemplateVars = {
   yourWebsite: string;
 };
 
+export const TEMPLATE_VARIABLE_KEYS = [
+  "businessName",
+  "industry",
+  "website",
+  "yourName",
+  "yourTitle",
+  "yourEmail",
+  "yourPhone",
+  "yourWebsite",
+] as const;
+
+export type TemplateVarKey = (typeof TEMPLATE_VARIABLE_KEYS)[number];
+
+export type TemplateVariableDef = {
+  key: TemplateVarKey;
+  label: string;
+  description: string;
+  example: string;
+};
+
+/** All placeholders supported when sending CRM emails (use exactly as shown, including braces). */
+export const TEMPLATE_VARIABLES: TemplateVariableDef[] = [
+  {
+    key: "businessName",
+    label: "Business name",
+    description: "Lead company name from CRM",
+    example: "Acme Software",
+  },
+  {
+    key: "industry",
+    label: "Industry",
+    description: "Lead industry, or “your industry” if empty",
+    example: "SaaS / Software",
+  },
+  {
+    key: "website",
+    label: "Website snippet",
+    description: 'Inserts “ at https://…” when the lead has a website, otherwise empty',
+    example: " at https://acme.com",
+  },
+  {
+    key: "yourName",
+    label: "Your name",
+    description: "From CRM → Settings → Proposal sender (or SMTP from name)",
+    example: "Jane Doe",
+  },
+  {
+    key: "yourTitle",
+    label: "Your title",
+    description: "From Proposal sender settings",
+    example: "Founder",
+  },
+  {
+    key: "yourEmail",
+    label: "Your email",
+    description: "From Proposal sender or SMTP from address",
+    example: "jane@company.com",
+  },
+  {
+    key: "yourPhone",
+    label: "Your phone",
+    description: "From Proposal sender settings",
+    example: "+1 555 0100",
+  },
+  {
+    key: "yourWebsite",
+    label: "Your website",
+    description: "From Proposal sender settings",
+    example: "https://yourcompany.com",
+  },
+];
+
+export function formatTemplatePlaceholder(key: TemplateVarKey): string {
+  return `{{${key}}}`;
+}
+
+export function isValidTemplateVarKey(key: string): key is TemplateVarKey {
+  return (TEMPLATE_VARIABLE_KEYS as readonly string[]).includes(key);
+}
+
+/** Placeholders in text that are not in TEMPLATE_VARIABLE_KEYS (e.g. {{FirstName}}). */
+export function invalidTemplatePlaceholders(text: string): string[] {
+  const found = unreplacedPlaceholders(text);
+  return [...new Set(found.filter((k) => !isValidTemplateVarKey(k)))];
+}
+
 export type SenderFallback = {
   fromName?: string | null;
   fromEmail?: string | null;
