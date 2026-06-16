@@ -25,6 +25,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: #0a0a0a;
   --foreground: #fafafa;
   --card: #171717;
@@ -61,6 +62,17 @@ body {
 @layer base {
   * {
     @apply border-border;
+  }
+
+  .dark input:-webkit-autofill,
+  .dark input:-webkit-autofill:hover,
+  .dark input:-webkit-autofill:focus,
+  .dark textarea:-webkit-autofill,
+  .dark textarea:-webkit-autofill:hover,
+  .dark textarea:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 1000px var(--muted) inset;
+    -webkit-text-fill-color: var(--foreground);
+    caret-color: var(--foreground);
   }
 }
 

@@ -333,10 +333,10 @@ export function CrmLeadConversationPanel({
             onChange={(e) => setRecipient(e.target.value)}
             placeholder="To: email@company.com"
             type="email"
-            className="h-8 text-xs flex-1 min-w-[140px] border-0 bg-muted/50 focus-visible:ring-1"
+            className="h-8 text-xs flex-1 min-w-[140px] border-0 bg-muted text-foreground placeholder:text-muted-foreground focus-visible:ring-1"
           />
           <Select value={selectedTemplateId || "_none"} onValueChange={(v) => handleTemplateChange(v === "_none" ? "" : v)}>
-            <SelectTrigger className="h-8 w-auto min-w-[120px] max-w-[260px] text-xs border-0 bg-muted/50">
+            <SelectTrigger className="h-8 w-auto min-w-[120px] max-w-[260px] text-xs border-0 bg-muted">
               <SelectValue placeholder="Template…" />
             </SelectTrigger>
             <SelectContent>
@@ -352,7 +352,7 @@ export function CrmLeadConversationPanel({
             value={aiQuickPrompt}
             onChange={(e) => setAiQuickPrompt(e.target.value)}
             placeholder="AI prompt: e.g. short follow-up, answer their question…"
-            className="h-8 text-xs flex-1 min-w-[160px] border-0 bg-muted/50 focus-visible:ring-1"
+            className="h-8 text-xs flex-1 min-w-[160px] border-0 bg-muted text-foreground placeholder:text-muted-foreground focus-visible:ring-1"
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
@@ -378,7 +378,7 @@ export function CrmLeadConversationPanel({
           value={composeSubject}
           onChange={(e) => setComposeSubject(e.target.value)}
           placeholder="Subject"
-          className="h-8 text-sm border-0 bg-muted/40 focus-visible:ring-1"
+          className="h-8 text-sm border-0 bg-muted text-foreground placeholder:text-muted-foreground focus-visible:ring-1"
         />
 
         <div className="flex gap-2 items-start">
@@ -390,7 +390,7 @@ export function CrmLeadConversationPanel({
             multiline
             rows={5}
             className="flex-1 min-w-0"
-            inputClassName="rounded-2xl border-0 bg-muted/40 min-h-[120px] max-h-72 py-2.5 pl-3.5 pr-10 resize-y focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            inputClassName="rounded-2xl border-0 bg-muted min-h-[120px] max-h-72 py-2.5 pl-3.5 pr-10 resize-y focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           />
           <Button
             type="button"

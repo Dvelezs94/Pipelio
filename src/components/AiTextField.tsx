@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { improveTextWithAi } from "@/app/actions/ai-text";
+import { cn } from "@/lib/utils";
 import { Loader2, Sparkles } from "lucide-react";
 
 type AiTextFieldProps = {
@@ -57,7 +58,10 @@ export function AiTextField({
       <div className="relative">
         {multiline ? (
           <textarea
-            className={`w-full rounded-md border bg-background px-3 py-2 text-sm pr-10 ${inputClassName ?? ""}`}
+            className={cn(
+              "w-full rounded-md border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground pr-10",
+              inputClassName
+            )}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
@@ -69,7 +73,7 @@ export function AiTextField({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            className={`pr-10 ${inputClassName ?? ""}`}
+            className={cn("pr-10", inputClassName)}
             disabled={disabled || loading}
           />
         )}
