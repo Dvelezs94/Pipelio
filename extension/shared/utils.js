@@ -11,6 +11,10 @@
  * @property {number} [reviews]
  * @property {number|null} [rating]
  * @property {string|null} [profileUrl]
+ * @property {string|null} [description]
+ * @property {string|null} [hourlyRate]
+ * @property {string|null} [minProjectSize]
+ * @property {string|null} [employeeRange]
  */
 
 const SCRAPER_UTILS = {
@@ -118,6 +122,82 @@ const SCRAPER_UTILS = {
 
   isSent(el) {
     return el.dataset.crScraped === "1";
+  },
+
+  /** Read labeled stat blocks (Clutch data-content, GoodFirms, etc.). */
+  labeledFieldValue(root, labelMatchers) {
+    const matchers = Array.isArray(labelMatchers) ? labelMatchers : [labelMatchers];
+    const matches = (label) =>
+      matchers.some((m) => (typeof m === "string" ? label.includes(m) : m.test(label)));
+
+    for (const el of root.querySelectorAll("[data-content], [data-title], dt, .label, .field-label")) {
+      const raw =
+        el.getAttribute("data-content") ||
+        el.getAttribute("data-title") ||
+        this.text(el);
+      const label = raw.replace(/<\/?i>/gi, "").trim().toLowerCase();
+      if (!label || !matches(label)) continue;
+
+      const value =
+        this.text(el.querySelector("span, dd, .field-value, .value")) ||
+        this.text(el.nextElementSibling);
+      if (value && value.toLowerCase() !== label) return value;
+    }
+
+    return "";
+  },
+
+  /** Agency listing stats: min project, hourly rate, employees (ordered list-item fallback). */
+  extractAgencyListingDetails(card) {
+    const details = {
+      minProjectSize: null,
+      hourlyRate: null,
+      employeeRange: null,
+      description: null,
+    };
+
+    const minProject = this.labeledFieldValue(card, ["min. project", "min project", "project size"]);
+    const hourly = this.labeledFieldValue(card, ["hourly rate", "avg. hourly", "average hourly"]);
+    const employees = this.labeledFieldValue(card, ["employee", "team size", "company size"]);
+
+    if (minProject) details.minProjectSize = minProject;
+    if (hourly) details.hourlyRate = hourly;
+    if (employees) details.employeeRange = employees;
+
+    if (!details.minProjectSize || !details.hourlyRate || !details.employeeRange) {
+      const items = [...card.querySelectorAll(".module-list .list-item, .provider-info .list-item, .firm-details .list-item")]
+        .map((el) => this.text(el))
+        .filter(Boolean);
+      if (items.length >= 1 && !details.minProjectSize) details.minProjectSize = items[0];
+      if (items.length >= 2 && !details.hourlyRate) details.hourlyRate = items[1];
+      if (items.length >= 3 && !details.employeeRange) details.employeeRange = items[2];
+    }
+
+    const descEl = card.querySelector(
+      '[class*="description"], [class*="provider-insight"], [class*="company-summary"], [class*="ai-insight"], p.summary'
+    );
+    const description = this.text(descEl);
+    if (description && description.length > 20) details.description = description;
+
+    return details;
+  },
+
+  extractServiceFocus(card) {
+    const parts = [];
+    const selectors = [
+      ".chart-legend li",
+      ".services-chart li",
+      "[class*='service-focus'] li",
+      "[class*='service-line']",
+    ];
+    for (const sel of selectors) {
+      card.querySelectorAll(sel).forEach((el) => {
+        const t = this.text(el);
+        if (t && !parts.includes(t)) parts.push(t);
+      });
+      if (parts.length) break;
+    }
+    return parts.slice(0, 3).join(" · ");
   },
 };
 

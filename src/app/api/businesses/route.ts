@@ -16,7 +16,7 @@ type BusinessWhere = {
   website?: { not: null } | null;
   phone?: { not: null };
   dismissedAt?: null;
-  OR?: Array<{ name?: { contains: string; mode: "insensitive" }; address?: { contains: string; mode: "insensitive" }; industry?: { contains: string; mode: "insensitive" } }>;
+  OR?: Array<{ name?: { contains: string; mode: "insensitive" }; address?: { contains: string; mode: "insensitive" }; industry?: { contains: string; mode: "insensitive" }; description?: { contains: string; mode: "insensitive" } }>;
 };
 
 /**
@@ -67,6 +67,7 @@ export async function GET(request: NextRequest) {
       { name: { contains: search.trim(), mode: "insensitive" } },
       { address: { contains: search.trim(), mode: "insensitive" } },
       { industry: { contains: search.trim(), mode: "insensitive" } },
+      { description: { contains: search.trim(), mode: "insensitive" } },
     ];
   }
 

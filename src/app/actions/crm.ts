@@ -195,6 +195,10 @@ export type CrmLeadWithBusiness = {
     rating: number | null;
     reviews: number;
     leadScore: number | null;
+    description?: string | null;
+    hourlyRate?: string | null;
+    minProjectSize?: string | null;
+    employeeRange?: string | null;
     zipSearch?: {
       searchSource: string | null;
       searchQuery: string | null;
@@ -226,6 +230,10 @@ export async function getCrmLeads(): Promise<CrmLeadWithBusiness[]> {
           rating: true,
           reviews: true,
           leadScore: true,
+          description: true,
+          hourlyRate: true,
+          minProjectSize: true,
+          employeeRange: true,
           zipSearch: {
             select: { searchSource: true, searchQuery: true },
           },

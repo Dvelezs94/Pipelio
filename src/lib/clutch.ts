@@ -16,6 +16,13 @@ type ApifyClutchItem = {
   location?: string;
   url?: string;
   clutchUrl?: string;
+  profileUrl?: string;
+  tagline?: string;
+  summary?: string;
+  minProjectSize?: string;
+  hourlyRate?: string;
+  employeeCount?: string;
+  phone?: string | string[];
 };
 
 function parseNumber(value: string | number | undefined): number {
@@ -34,13 +41,21 @@ function mapClutchItem(item: ApifyClutchItem, industry: string): TechLead | null
   const name = item.title?.trim() || item.name?.trim();
   if (!name) return null;
 
-  const profileUrl = item.clutchUrl?.trim() || item.url?.trim() || null;
+  const rawProfile = item.clutchUrl?.trim() || item.url?.trim() || item.profileUrl?.trim() || null;
+  const profileUrl = rawProfile?.startsWith("http")
+    ? rawProfile
+    : rawProfile
+      ? `https://clutch.co${rawProfile.startsWith("/") ? "" : "/"}${rawProfile}`
+      : null;
   const slug = slugFromProfileUrl(profileUrl ?? undefined);
   const externalId = slug ? `clutch:${slug}` : `clutch:${name.toLowerCase().replace(/\s+/g, "-")}`;
 
   const website = item.website?.trim() || null;
   const reviews = parseNumber(item.reviews ?? item.reviewCount);
   const ratingRaw = parseNumber(item.rating);
+  const phone = Array.isArray(item.phone) ? item.phone[0]?.trim() || null : item.phone?.trim() || null;
+  const description = item.summary?.trim() || item.tagline?.trim() || null;
+  const category = item.tagline?.trim() || "Clutch listing";
 
   return {
     externalId,
@@ -48,12 +63,16 @@ function mapClutchItem(item: ApifyClutchItem, industry: string): TechLead | null
     website,
     address: item.location?.trim() || null,
     email: null,
-    phone: null,
-    category: "Clutch listing",
+    phone,
+    category,
     industry,
     reviews,
     rating: ratingRaw > 0 ? ratingRaw : null,
     source: "clutch",
+    description,
+    hourlyRate: item.hourlyRate?.trim() || null,
+    minProjectSize: item.minProjectSize?.trim() || null,
+    employeeRange: item.employeeCount?.trim() || null,
   };
 }
 

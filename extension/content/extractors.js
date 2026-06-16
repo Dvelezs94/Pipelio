@@ -65,7 +65,11 @@
             ".reviews-count",
           ]);
           const location = u.firstText(card, [".locality", ".location", "[class*='location']"]);
-          const category = u.firstText(card, [".tagline", ".categories", "[class*='tagline']"]);
+          const tagline = u.firstText(card, [".tagline", ".company-tagline", "p.tagline"]);
+          const listing = u.extractAgencyListingDetails(card);
+          const services = u.extractServiceFocus(card);
+          const categoryParts = [tagline, services].filter(Boolean);
+          const category = categoryParts.length ? categoryParts.join(" · ") : "Agency / Dev Shop";
 
           results.push({
             externalId: profileUrl,
@@ -73,10 +77,14 @@
             profileUrl,
             website: website && !website.includes("clutch.co") ? website : null,
             address: location || null,
-            category: category || "Agency / Dev Shop",
+            category,
             industry: "Software Development",
             rating: u.parseNumber(ratingRaw) || null,
             reviews: u.parseInt(reviewsRaw),
+            description: listing.description,
+            hourlyRate: listing.hourlyRate,
+            minProjectSize: listing.minProjectSize,
+            employeeRange: listing.employeeRange,
           });
           u.markSent(card);
         }
@@ -110,13 +118,21 @@
           if (!name || !profileUrl) continue;
           const meta = u.text(card);
           const locationMatch = meta.match(/([A-Z][a-z]+(?:,\s*[A-Z]{2})?)/);
+          const description = u.firstText(card, [
+            "[class*='description']",
+            "p.description",
+            ".component--field-formatter",
+          ]);
+          const employeeRange = u.labeledFieldValue(card, ["employee", "company size", "num employees"]);
           results.push({
             externalId: profileUrl,
             name,
             profileUrl,
             address: locationMatch ? locationMatch[1] : null,
-            category: "Company",
+            category: u.firstText(card, [".category", "[class*='category']"]) || "Company",
             industry: "SaaS / Software",
+            description: description || null,
+            employeeRange: employeeRange || null,
           });
           u.markSent(card);
         }
@@ -156,6 +172,11 @@
           ]);
           const reviewsRaw = u.firstText(card, ["[class*='review']", "[data-testid*='review']"]);
           const category = u.firstText(card, [".category", "[class*='category']"]);
+          const description = u.firstText(card, [
+            "[class*='description']",
+            "[data-testid*='description']",
+            "p",
+          ]);
           results.push({
             externalId: profileUrl,
             name,
@@ -164,6 +185,7 @@
             industry: "SaaS / Software",
             rating: u.parseNumber(ratingRaw) || null,
             reviews: u.parseInt(reviewsRaw),
+            description: description && description !== name ? description : null,
           });
           u.markSent(card);
         }
@@ -197,6 +219,7 @@
           const profileUrl = u.firstHref(card, ["a[href*='/software/']", "h2 a", "h3 a"]);
           const ratingRaw = u.firstText(card, ["[class*='rating']", "[aria-label*='star']"]);
           const reviewsRaw = u.firstText(card, ["[class*='review']"]);
+          const description = u.firstText(card, ["[class*='description']", "p"]);
           results.push({
             externalId: profileUrl,
             name,
@@ -205,6 +228,7 @@
             industry: "SaaS / Software",
             rating: u.parseNumber(ratingRaw) || null,
             reviews: u.parseInt(reviewsRaw),
+            description: description && description !== name ? description : null,
           });
           u.markSent(card);
         }
@@ -244,6 +268,7 @@
             category: tagline || "Product",
             industry: "SaaS / Software",
             reviews: u.parseInt(u.firstText(card, ["[data-test='votes-count']", "[class*='vote']"])),
+            description: tagline || null,
           });
           u.markSent(card);
         }
@@ -274,6 +299,7 @@
           const desc = row ? u.firstText(row, ["p", ".description", "[class*='description']"]) : "";
           const location = row ? u.firstText(row, [".location", "[class*='location']"]) : "";
           const batch = row ? u.firstText(row, [".batch", "[class*='batch']"]) : "";
+          const employeeRange = row ? u.labeledFieldValue(row, ["employee", "team size"]) : "";
           if (!name || name.length < 2) continue;
           results.push({
             externalId: profileUrl,
@@ -282,6 +308,8 @@
             address: location || null,
             category: batch ? `YC ${batch}` : "YC Startup",
             industry: "SaaS / Software",
+            description: desc || null,
+            employeeRange: employeeRange || null,
           });
           u.markSent(link);
         }
@@ -310,6 +338,7 @@
           const profileUrl = u.absUrl(link.href);
           const row = card.closest("div") || card;
           const tagline = u.firstText(row, ["p", ".tagline", "[class*='tagline']"]);
+          const employeeRange = u.labeledFieldValue(row, ["employee", "company size", "team size"]);
           if (!name) continue;
           results.push({
             externalId: profileUrl,
@@ -317,6 +346,8 @@
             profileUrl,
             category: tagline || "Startup",
             industry: "SaaS / Software",
+            description: tagline || null,
+            employeeRange: employeeRange || null,
           });
           u.markSent(card);
         }
@@ -344,16 +375,22 @@
           const website = u.firstHref(card, ["a[href*='website']", "a.visit-website"]);
           const ratingRaw = u.firstText(card, [".rating", "[class*='rating']"]);
           const reviewsRaw = u.firstText(card, [".reviews", "[class*='review']"]);
+          const listing = u.extractAgencyListingDetails(card);
+          const tagline = u.firstText(card, [".tagline", "[class*='tagline']"]);
           if (!name) continue;
           results.push({
             externalId: profileUrl,
             name,
             profileUrl,
             website: website && !website.includes("goodfirms.co") ? website : null,
-            category: "Agency / Dev Shop",
+            category: tagline || "Agency / Dev Shop",
             industry: "Software Development",
             rating: u.parseNumber(ratingRaw) || null,
             reviews: u.parseInt(reviewsRaw),
+            description: listing.description || tagline || null,
+            hourlyRate: listing.hourlyRate,
+            minProjectSize: listing.minProjectSize,
+            employeeRange: listing.employeeRange,
           });
           u.markSent(card);
         }
@@ -398,6 +435,8 @@
           const name = u.text(link);
           const profileUrl = u.absUrl(link.href);
           const location = u.firstText(card, [".location", "[class*='location']"]);
+          const description = u.firstText(card, ["p", "[class*='description']"]);
+          const employeeRange = u.labeledFieldValue(card, ["employee", "company size"]);
           if (!name) continue;
           results.push({
             externalId: profileUrl,
@@ -406,6 +445,8 @@
             address: location || null,
             category: "Tech Company",
             industry: "SaaS / Software",
+            description: description || null,
+            employeeRange: employeeRange || null,
           });
           u.markSent(card);
         }
@@ -431,6 +472,7 @@
           const name = u.firstText(card, ["h2 a", "h3 a", ".title a", "a[href*='/software/']"]);
           const profileUrl = u.firstHref(card, ["h2 a", "h3 a", "a[href*='/software/']"]);
           const ratingRaw = u.firstText(card, [".rating", "[class*='rating']"]);
+          const description = u.firstText(card, ["[class*='description']", "p"]);
           if (!name) continue;
           results.push({
             externalId: profileUrl,
@@ -439,6 +481,7 @@
             category: "Software Product",
             industry: "SaaS / Software",
             rating: u.parseNumber(ratingRaw) || null,
+            description: description && description !== name ? description : null,
           });
           u.markSent(card);
         }
@@ -479,6 +522,7 @@
             website: profileUrl,
             category: desc || "GitHub Organization",
             industry: "SaaS / Software",
+            description: desc || null,
           });
           u.markSent(card);
         }

@@ -44,7 +44,11 @@ async function processLeadsToBusinesses(
       email: lead.email,
       reviews: lead.reviews,
     });
-    const size = estimateTechSize({ engagement: lead.reviews, name: lead.name });
+    const size = estimateTechSize({
+      engagement: lead.reviews,
+      name: lead.name,
+      employeeRange: lead.employeeRange,
+    });
 
     return {
       workspaceId,
@@ -64,6 +68,10 @@ async function processLeadsToBusinesses(
       zipSearchId: searchId,
       domain: extractDomain(lead.website),
       leadScore,
+      description: lead.description?.trim() || null,
+      hourlyRate: lead.hourlyRate?.trim() || null,
+      minProjectSize: lead.minProjectSize?.trim() || null,
+      employeeRange: lead.employeeRange?.trim() || null,
     };
   });
 

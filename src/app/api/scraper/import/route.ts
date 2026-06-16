@@ -19,6 +19,10 @@ const companySchema = z.object({
   reviews: z.number().int().nonnegative().optional(),
   rating: z.number().nullable().optional(),
   profileUrl: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  hourlyRate: z.string().nullable().optional(),
+  minProjectSize: z.string().nullable().optional(),
+  employeeRange: z.string().nullable().optional(),
 });
 
 const bodySchema = z.object({

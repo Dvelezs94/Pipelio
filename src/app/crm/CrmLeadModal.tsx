@@ -283,6 +283,24 @@ export function CrmLeadModal({
                     <dt className="text-muted-foreground">Size</dt>
                     <dd>{b.size ?? "—"}</dd>
                   </div>
+                  {b.employeeRange && (
+                    <div>
+                      <dt className="text-muted-foreground">Employees</dt>
+                      <dd>{b.employeeRange}</dd>
+                    </div>
+                  )}
+                  {b.hourlyRate && (
+                    <div>
+                      <dt className="text-muted-foreground">Hourly rate</dt>
+                      <dd>{b.hourlyRate}</dd>
+                    </div>
+                  )}
+                  {b.minProjectSize && (
+                    <div>
+                      <dt className="text-muted-foreground">Min. project size</dt>
+                      <dd>{b.minProjectSize}</dd>
+                    </div>
+                  )}
                   <div>
                     <dt className="text-muted-foreground">Rating</dt>
                     <dd>{b.rating != null ? `★ ${b.rating} (${b.reviews} reviews)` : "—"}</dd>
@@ -292,6 +310,12 @@ export function CrmLeadModal({
                     <dd>{new Date(lead.createdAt).toLocaleDateString()}</dd>
                   </div>
                 </dl>
+                {b.description && (
+                  <div className="sm:col-span-2">
+                    <dt className="text-muted-foreground text-xs font-semibold uppercase mb-1">About</dt>
+                    <dd className="text-sm leading-relaxed">{b.description}</dd>
+                  </div>
+                )}
               </section>
 
               <section className="flex flex-wrap gap-2">

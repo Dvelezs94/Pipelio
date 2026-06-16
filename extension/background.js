@@ -63,6 +63,10 @@ async function sendBatch(payload) {
         typeof c.reviews === "number" && Number.isFinite(c.reviews)
           ? Math.max(0, Math.floor(c.reviews))
           : 0,
+      description: c.description?.trim() || null,
+      hourlyRate: c.hourlyRate?.trim() || null,
+      minProjectSize: c.minProjectSize?.trim() || null,
+      employeeRange: c.employeeRange?.trim() || null,
     }))
     .filter((c) => c.name.length >= 2);
 

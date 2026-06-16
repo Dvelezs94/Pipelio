@@ -12,6 +12,10 @@ export type TechLead = {
   reviews: number;
   rating: number | null;
   source: string;
+  description?: string | null;
+  hourlyRate?: string | null;
+  minProjectSize?: string | null;
+  employeeRange?: string | null;
 };
 
 export function extractDomain(website: string | null | undefined): string | null {
@@ -38,10 +42,25 @@ export function computeTechLeadScore(lead: {
   return Math.min(100, score);
 }
 
+export function sizeFromEmployeeRange(range: string | null | undefined): BusinessSize | null {
+  if (!range?.trim()) return null;
+  const match = range.replace(/,/g, "").match(/(\d+)/);
+  if (!match) return null;
+  const min = parseInt(match[1], 10);
+  if (!Number.isFinite(min)) return null;
+  if (min >= 250) return "Large";
+  if (min >= 50) return "Medium";
+  return "Small";
+}
+
 export function estimateTechSize(params: {
   engagement: number;
   name?: string | null;
+  employeeRange?: string | null;
 }): BusinessSize {
+  const fromEmployees = sizeFromEmployeeRange(params.employeeRange);
+  if (fromEmployees) return fromEmployees;
+
   const { engagement } = params;
   if (engagement < 20) return "Small";
   if (engagement < 200) return "Medium";

@@ -84,6 +84,10 @@ model Business {
   domain      String?
   leadScore   Int?      @default(0)
   sourceUrl   String?   // original listing profile (Clutch, G2, etc.)
+  description    String? // listing summary / company blurb
+  hourlyRate     String? // e.g. "$100 - $149 / hr"
+  minProjectSize String? // e.g. "$25,000+"
+  employeeRange  String? // e.g. "50 - 249 employees"
   crmLead     CrmLead?
   dismissedAt DateTime? // when set, business is hidden by default (soft dismiss)
   viewedAt    DateTime? // when set, user opened an external link for this business

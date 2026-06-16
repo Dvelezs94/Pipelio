@@ -38,6 +38,10 @@ export type ScrapedCompanyInput = {
   reviews?: number;
   rating?: number | null;
   profileUrl?: string | null;
+  description?: string | null;
+  hourlyRate?: string | null;
+  minProjectSize?: string | null;
+  employeeRange?: string | null;
 };
 
 export type ScraperImportInput = {
@@ -92,6 +96,10 @@ function toTechLead(source: string, company: ScrapedCompanyInput): TechLead | nu
     reviews: Math.max(0, company.reviews ?? 0),
     rating: company.rating ?? null,
     source,
+    description: company.description?.trim() || null,
+    hourlyRate: company.hourlyRate?.trim() || null,
+    minProjectSize: company.minProjectSize?.trim() || null,
+    employeeRange: company.employeeRange?.trim() || null,
   };
 }
 
@@ -164,7 +172,11 @@ export async function importScrapedCompanies(
       email: lead.email,
       reviews: lead.reviews,
     });
-    const size = estimateTechSize({ engagement: lead.reviews, name: lead.name });
+    const size = estimateTechSize({
+      engagement: lead.reviews,
+      name: lead.name,
+      employeeRange: lead.employeeRange,
+    });
 
     return {
       workspaceId: input.workspaceId,
@@ -185,6 +197,10 @@ export async function importScrapedCompanies(
       domain: extractDomain(lead.website),
       leadScore,
       sourceUrl: profileUrl,
+      description: lead.description?.trim() || null,
+      hourlyRate: lead.hourlyRate?.trim() || null,
+      minProjectSize: lead.minProjectSize?.trim() || null,
+      employeeRange: lead.employeeRange?.trim() || null,
     };
   });
 

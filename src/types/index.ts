@@ -21,6 +21,10 @@ export interface BusinessRecord {
   viewedAt?: string | null;
   /** Original listing profile URL (Clutch, G2, etc.) */
   sourceUrl?: string | null;
+  description?: string | null;
+  hourlyRate?: string | null;
+  minProjectSize?: string | null;
+  employeeRange?: string | null;
 }
 
 /** Saved search with optional business list */
