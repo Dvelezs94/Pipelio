@@ -24,7 +24,7 @@ import {
 } from "@/hooks/useVisitedBusinesses";
 import { ChevronLeft, ChevronRight, ExternalLink, Phone, Linkedin, UserPlus, Check, EyeOff, Eye } from "lucide-react";
 import { ListingProfileLink } from "@/components/ListingSourceLinks";
-import { resolveBusinessSourceUrl } from "@/lib/listing-source";
+import { BusinessDetailModal } from "@/components/BusinessDetailModal";
 
 const PAGE_SIZES = [10, 25, 50, 100];
 const SORT_OPTIONS = [
@@ -63,6 +63,7 @@ export function BusinessTable({
   const [pageSize, setPageSize] = useState(25);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [dismissingId, setDismissingId] = useState<string | null>(null);
+  const [detailBusiness, setDetailBusiness] = useState<BusinessRecord | null>(null);
   const [visitedIds, setVisitedIds] = useState<Set<string>>(() => new Set());
   const [lastVisitedId, setLastVisitedId] = useState<string | null>(null);
 
@@ -289,22 +290,13 @@ export function BusinessTable({
                 className="border-b"
               >
                 <td className="p-3 font-medium">
-                  {(() => {
-                    const listingUrl = resolveBusinessSourceUrl(b);
-                    if (!listingUrl) return b.name;
-                    return (
-                      <a
-                        href={listingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="hover:text-primary hover:underline"
-                        title={listingUrl}
-                        onPointerDown={() => handleExternalLinkClick(b.id)}
-                      >
-                        {b.name}
-                      </a>
-                    );
-                  })()}
+                  <button
+                    type="button"
+                    onClick={() => setDetailBusiness(b)}
+                    className="text-left hover:text-primary hover:underline cursor-pointer"
+                  >
+                    {b.name}
+                  </button>
                 </td>
                 <td className="p-3 text-muted-foreground">{b.industry ?? "—"}</td>
                 <td className="p-3">{b.size ?? "—"}</td>
@@ -448,6 +440,17 @@ export function BusinessTable({
           </Button>
         </div>
       </div>
+
+      <BusinessDetailModal
+        business={detailBusiness}
+        open={detailBusiness != null}
+        onOpenChange={(open) => {
+          if (!open) setDetailBusiness(null);
+        }}
+        savedToCrm={detailBusiness ? savedSet.has(detailBusiness.id) : false}
+        savingToCrm={detailBusiness ? savingId === detailBusiness.id : false}
+        onSaveToCrm={savedToCrmIds !== undefined ? handleSaveToCrm : undefined}
+      />
     </div>
   );
 }

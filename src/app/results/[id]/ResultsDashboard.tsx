@@ -55,6 +55,10 @@ export interface ResultsDashboardProps {
     dismissedAt: string | null;
     viewedAt: string | null;
     sourceUrl?: string | null;
+    description?: string | null;
+    hourlyRate?: string | null;
+    minProjectSize?: string | null;
+    employeeRange?: string | null;
   }>;
   initialCrmLeadIds: string[];
   mapApiKey: string;
@@ -80,6 +84,10 @@ function toRecord(b: ResultsDashboardProps["initialBusinesses"][0]): BusinessRec
     dismissedAt: b.dismissedAt ?? undefined,
     viewedAt: b.viewedAt ?? undefined,
     sourceUrl: b.sourceUrl ?? undefined,
+    description: b.description ?? undefined,
+    hourlyRate: b.hourlyRate ?? undefined,
+    minProjectSize: b.minProjectSize ?? undefined,
+    employeeRange: b.employeeRange ?? undefined,
   };
 }
 

@@ -32,30 +32,11 @@ import {
   Eye,
 } from "lucide-react";
 import { ListingProfileLink, ListingSearchOrigin } from "@/components/ListingSourceLinks";
-import { resolveBusinessSourceUrl } from "@/lib/listing-source";
+import { BusinessDetailModal, type BusinessDetailFields } from "@/components/BusinessDetailModal";
 
-type ZipSearchRef = {
-  id: string;
-  zipCode: string;
-  countryCode: string;
-  searchSource?: string | null;
-  searchQuery?: string | null;
-};
-type BusinessRow = {
-  id: string;
-  name: string;
-  placeId?: string;
-  sourceUrl?: string | null;
-  address: string | null;
-  phone: string | null;
-  website: string | null;
-  industry: string | null;
-  size: string | null;
-  rating: number | null;
-  reviews: number;
-  leadScore: number | null;
+type BusinessRow = BusinessDetailFields & {
   dismissedAt: string | null;
-  zipSearch?: ZipSearchRef;
+  reviews: number;
 };
 
 type Pagination = { page: number; limit: number; total: number; totalPages: number };
@@ -127,6 +108,7 @@ export function DatabaseView() {
   const [crmLeadIds, setCrmLeadIds] = useState<string[]>([]);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [dismissingId, setDismissingId] = useState<string | null>(null);
+  const [detailBusiness, setDetailBusiness] = useState<BusinessRow | null>(null);
 
   const apiParams = { page, limit, ...applied };
   const apiUrl = buildApiUrl(apiParams);
@@ -387,21 +369,13 @@ export function DatabaseView() {
                       {businesses.map((b) => (
                         <tr key={b.id} className="border-b hover:bg-muted/30">
                           <td className="p-3 font-medium">
-                            {(() => {
-                              const listingUrl = resolveBusinessSourceUrl(b);
-                              if (!listingUrl) return b.name;
-                              return (
-                                <a
-                                  href={listingUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="hover:text-primary hover:underline"
-                                  title={listingUrl}
-                                >
-                                  {b.name}
-                                </a>
-                              );
-                            })()}
+                            <button
+                              type="button"
+                              onClick={() => setDetailBusiness(b)}
+                              className="text-left hover:text-primary hover:underline cursor-pointer"
+                            >
+                              {b.name}
+                            </button>
                           </td>
                           <td className="p-3 text-muted-foreground">{b.industry ?? "—"}</td>
                           <td className="p-3">{b.size ?? "—"}</td>
@@ -540,6 +514,17 @@ export function DatabaseView() {
             )}
           </CardContent>
         </Card>
+
+        <BusinessDetailModal
+          business={detailBusiness}
+          open={detailBusiness != null}
+          onOpenChange={(open) => {
+            if (!open) setDetailBusiness(null);
+          }}
+          savedToCrm={detailBusiness ? savedSet.has(detailBusiness.id) : false}
+          savingToCrm={detailBusiness ? savingId === detailBusiness.id : false}
+          onSaveToCrm={handleSaveToCrm}
+        />
       </main>
     </div>
   );
