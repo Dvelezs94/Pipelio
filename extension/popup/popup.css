@@ -168,6 +168,25 @@ button:hover {
   background: #fafafa;
 }
 
+.queue-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.queue-preview {
+  margin: 6px 0 10px;
+  padding: 0 0 0 16px;
+  font-size: 12px;
+  color: #334155;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.queue-preview li {
+  margin: 2px 0;
+}
+
 select:disabled {
   opacity: 0.6;
   cursor: not-allowed;

@@ -83,6 +83,7 @@ model Business {
   // Bonus: enrichment fields
   domain      String?
   leadScore   Int?      @default(0)
+  sourceUrl   String?   // original listing profile (Clutch, G2, etc.)
   crmLead     CrmLead?
   dismissedAt DateTime? // when set, business is hidden by default (soft dismiss)
   viewedAt    DateTime? // when set, user opened an external link for this business

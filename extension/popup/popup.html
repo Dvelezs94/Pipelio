@@ -34,6 +34,12 @@
         Auto-scrape supported listing sites
       </label>
 
+      <label class="checkbox">
+        <input id="autoSend" type="checkbox" />
+        Auto-send to Pipelio after scrape (skip review)
+      </label>
+      <p class="hint muted small">Leave auto-send off to review scraped names on the page before importing.</p>
+
       <div class="actions">
         <button id="connect" type="button">Connect</button>
         <button id="save" type="button" class="secondary">Save</button>
@@ -43,6 +49,16 @@
     <section class="card">
       <p id="pageInfo" class="muted">Open a listing page to scrape. Imports appear in Pipelio → Database (not CRM until you save).</p>
       <button id="scrapeNow" type="button" class="full">Scrape this page now</button>
+
+      <div id="queueSection" class="queue-section hidden">
+        <p class="label">Ready to send</p>
+        <ul id="queuePreview" class="queue-preview"></ul>
+        <div class="actions">
+          <button id="discardQueue" type="button" class="secondary">Discard</button>
+          <button id="sendQueue" type="button">Send to Pipelio</button>
+        </div>
+      </div>
+
       <p id="stats" class="stats muted"></p>
       <p id="status" class="status"></p>
     </section>

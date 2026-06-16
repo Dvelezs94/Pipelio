@@ -5,9 +5,14 @@ const els = {
   apiKey: document.getElementById("apiKey"),
   workspaceSelect: document.getElementById("workspaceSelect"),
   autoScrape: document.getElementById("autoScrape"),
+  autoSend: document.getElementById("autoSend"),
   connect: document.getElementById("connect"),
   save: document.getElementById("save"),
   scrapeNow: document.getElementById("scrapeNow"),
+  sendQueue: document.getElementById("sendQueue"),
+  discardQueue: document.getElementById("discardQueue"),
+  queueSection: document.getElementById("queueSection"),
+  queuePreview: document.getElementById("queuePreview"),
   pageInfo: document.getElementById("pageInfo"),
   status: document.getElementById("status"),
   stats: document.getElementById("stats"),
@@ -19,11 +24,18 @@ function setStatus(text, type = "") {
 }
 
 async function loadSettings() {
-  const stored = await chrome.storage.sync.get(["apiUrl", "apiKey", "workspaceId", "autoScrape"]);
+  const stored = await chrome.storage.sync.get([
+    "apiUrl",
+    "apiKey",
+    "workspaceId",
+    "autoScrape",
+    "autoSend",
+  ]);
 
   els.apiUrl.value = stored.apiUrl || base.API_URL || "";
   els.apiKey.value = stored.apiKey || base.API_KEY || "";
   els.autoScrape.checked = stored.autoScrape ?? base.AUTO_SCRAPE ?? true;
+  els.autoSend.checked = stored.autoSend ?? base.AUTO_SEND ?? false;
 
   if (stored.apiKey && stored.apiUrl) {
     await connectAndLoadProjects(stored.workspaceId || "");
@@ -37,6 +49,7 @@ async function saveSettings() {
     apiKey: els.apiKey.value.trim(),
     workspaceId,
     autoScrape: els.autoScrape.checked,
+    autoSend: els.autoSend.checked,
   });
   setStatus(workspaceId ? "Settings saved." : "Saved — select a project.", workspaceId ? "ok" : "");
 }
@@ -110,6 +123,22 @@ async function connectAndLoadProjects(preferredWorkspaceId = "") {
   });
 }
 
+function renderQueue(info) {
+  if (!info?.pending) {
+    els.queueSection.classList.add("hidden");
+    els.queuePreview.innerHTML = "";
+    return;
+  }
+
+  els.queueSection.classList.remove("hidden");
+  const preview = info.preview || [];
+  const extra = info.pending - preview.length;
+  els.queuePreview.innerHTML = [
+    ...preview.map((name) => `<li>${name}</li>`),
+    extra > 0 ? `<li class="muted">…and ${extra} more</li>` : "",
+  ].join("");
+}
+
 async function refreshPageInfo() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return;
@@ -117,13 +146,16 @@ async function refreshPageInfo() {
   chrome.tabs.sendMessage(tab.id, { type: "GET_PAGE_INFO" }, (info) => {
     if (chrome.runtime.lastError || !info) {
       els.pageInfo.textContent = "Open a supported listing site (reload tab after installing).";
+      renderQueue(null);
       return;
     }
-    els.pageInfo.textContent = `${info.label || info.source} · ${info.pending} queued · ${info.title?.slice(0, 60) || ""}`;
+    const sendMode = els.autoSend.checked ? "auto-send" : "manual review";
+    els.pageInfo.textContent = `${info.label || info.source} · ${info.pending} queued · ${sendMode}`;
+    renderQueue(info);
   });
 }
 
-async function scrapeNow() {
+async function withActiveTab(message, onDone) {
   const workspaceId = els.workspaceSelect.value;
   if (!workspaceId) {
     setStatus("Select a project first.", "err");
@@ -134,14 +166,50 @@ async function scrapeNow() {
 
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) return;
-  setStatus("Scraping…");
-  chrome.tabs.sendMessage(tab.id, { type: "SCRAPE_NOW" }, () => {
+
+  chrome.tabs.sendMessage(tab.id, message, (res) => {
     if (chrome.runtime.lastError) {
-      setStatus("Cannot scrape this tab. Open a supported listing site.", "err");
+      setStatus("Cannot reach this tab. Open a supported listing site.", "err");
       return;
     }
-    setStatus("Scrape triggered. Check the badge on the page.", "ok");
-    setTimeout(refreshPageInfo, 2000);
+    onDone?.(res);
+    setTimeout(refreshPageInfo, 500);
+  });
+}
+
+async function scrapeNow() {
+  setStatus("Scraping…");
+  withActiveTab({ type: "SCRAPE_NOW" }, (res) => {
+    if (els.autoSend.checked) {
+      setStatus("Scraping and sending…", "ok");
+    } else {
+      setStatus(
+        res?.pending ? `${res.pending} queued — review on page or send below.` : "Scrape done.",
+        "ok"
+      );
+    }
+  });
+}
+
+async function sendQueue() {
+  setStatus("Sending…");
+  withActiveTab({ type: "SEND_PENDING" }, (res) => {
+    if (res?.error) {
+      setStatus(res.error, "err");
+      return;
+    }
+    if (res?.imported != null) {
+      setStatus(`Sent: ${res.imported} new, ${res.skipped || 0} duplicates`, "ok");
+      loadStats();
+    } else {
+      setStatus("Send complete.", "ok");
+    }
+  });
+}
+
+async function discardQueue() {
+  withActiveTab({ type: "DISCARD_PENDING" }, () => {
+    setStatus("Queue discarded.", "ok");
   });
 }
 
@@ -159,7 +227,10 @@ async function loadStats() {
 els.connect.addEventListener("click", () => connectAndLoadProjects());
 els.save.addEventListener("click", saveSettings);
 els.workspaceSelect.addEventListener("change", saveSettings);
+els.autoSend.addEventListener("change", saveSettings);
 els.scrapeNow.addEventListener("click", scrapeNow);
+els.sendQueue.addEventListener("click", sendQueue);
+els.discardQueue.addEventListener("click", discardQueue);
 
 loadSettings().then(() => {
   refreshPageInfo();

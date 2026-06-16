@@ -19,6 +19,8 @@ export interface BusinessRecord {
   dismissedAt?: string | null;
   /** When set, user opened an external link for this business */
   viewedAt?: string | null;
+  /** Original listing profile URL (Clutch, G2, etc.) */
+  sourceUrl?: string | null;
 }
 
 /** Saved search with optional business list */

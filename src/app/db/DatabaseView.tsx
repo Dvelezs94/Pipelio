@@ -31,11 +31,20 @@ import {
   EyeOff,
   Eye,
 } from "lucide-react";
+import { ListingProfileLink, ListingSearchOrigin } from "@/components/ListingSourceLinks";
 
-type ZipSearchRef = { id: string; zipCode: string; countryCode: string };
+type ZipSearchRef = {
+  id: string;
+  zipCode: string;
+  countryCode: string;
+  searchSource?: string | null;
+  searchQuery?: string | null;
+};
 type BusinessRow = {
   id: string;
   name: string;
+  placeId?: string;
+  sourceUrl?: string | null;
   address: string | null;
   phone: string | null;
   website: string | null;
@@ -320,6 +329,7 @@ export function DatabaseView() {
                         <th className="text-left p-3 font-medium">Lead score</th>
                         <th className="text-left p-3 font-medium">Phone</th>
                         <th className="text-left p-3 font-medium">Website</th>
+                        <th className="text-left p-3 font-medium">Listing profile</th>
                         <th className="text-left p-3 font-medium">LinkedIn</th>
                         <th className="text-left p-3 font-medium">From search</th>
                         <th className="text-left p-3 font-medium">CRM</th>
@@ -355,6 +365,9 @@ export function DatabaseView() {
                             )}
                           </td>
                           <td className="p-3">
+                            <ListingProfileLink business={b} />
+                          </td>
+                          <td className="p-3">
                             <a
                               href={`https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(b.name)}`}
                               target="_blank"
@@ -367,12 +380,12 @@ export function DatabaseView() {
                             </a>
                           </td>
                           <td className="p-3">
-                            {b.zipSearch ? (
+                            {b.zipSearch?.zipCode && !b.zipSearch.searchSource?.startsWith("browser_extension:") ? (
                               <Link href={`/results/${b.zipSearch.id}`} className="text-primary hover:underline">
                                 {b.zipSearch.zipCode} ({b.zipSearch.countryCode})
                               </Link>
                             ) : (
-                              "—"
+                              <ListingSearchOrigin zipSearch={b.zipSearch} />
                             )}
                           </td>
                           <td className="p-3">

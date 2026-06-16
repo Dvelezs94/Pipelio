@@ -51,12 +51,31 @@ const SCRAPER_UTILS = {
     }
   },
 
+  isLikelyCompanyName(name) {
+    const t = (name || "").trim();
+    if (t.length < 2 || t.length > 100) return false;
+    if (/^[\$€£]/.test(t)) return false;
+    if (/\$[\d,]+/.test(t) && /\d,\d{3}/.test(t)) return false;
+    if (/^\(\w{2,3}\)$/i.test(t)) return false;
+    if (/^\d[\d,.\s]*(?:to|-)\s*\$?\d/i.test(t)) return false;
+    if (/^(small|medium|large|enterprise)$/i.test(t)) return false;
+    return true;
+  },
+
+  nameFromClutchProfileUrl(url) {
+    const m = String(url || "").match(/clutch\.co\/profile\/([^/?#]+)/i);
+    if (!m) return "";
+    return m[1]
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  },
+
   dedupe(companies) {
     const seen = new Set();
     const out = [];
     for (const c of companies) {
       const name = c.name?.trim();
-      if (!name || name.length < 2) continue;
+      if (!name || !this.isLikelyCompanyName(name)) continue;
       const key = c.externalId || c.profileUrl || c.website || name.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);

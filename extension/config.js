@@ -13,6 +13,8 @@ const EXTENSION_CONFIG = {
   WORKSPACE_ID: "",
 
   AUTO_SCRAPE: true,
+  /** When false, scraped companies stay queued until you confirm send (recommended while tuning extractors). */
+  AUTO_SEND: false,
   SEND_INTERVAL_SEC: 3,
   BATCH_SIZE: 25,
 };

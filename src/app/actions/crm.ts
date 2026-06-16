@@ -184,6 +184,8 @@ export type CrmLeadWithBusiness = {
   business: {
     id: string;
     name: string;
+    placeId: string;
+    sourceUrl: string | null;
     address: string | null;
     phone: string | null;
     email: string | null;
@@ -193,6 +195,10 @@ export type CrmLeadWithBusiness = {
     rating: number | null;
     reviews: number;
     leadScore: number | null;
+    zipSearch?: {
+      searchSource: string | null;
+      searchQuery: string | null;
+    } | null;
   };
   noteList: CrmNoteRecord[];
   unreadInboxCount: number;
@@ -209,6 +215,8 @@ export async function getCrmLeads(): Promise<CrmLeadWithBusiness[]> {
         select: {
           id: true,
           name: true,
+          placeId: true,
+          sourceUrl: true,
           address: true,
           phone: true,
           email: true,
@@ -218,6 +226,9 @@ export async function getCrmLeads(): Promise<CrmLeadWithBusiness[]> {
           rating: true,
           reviews: true,
           leadScore: true,
+          zipSearch: {
+            select: { searchSource: true, searchQuery: true },
+          },
         },
       },
       noteList: {

@@ -12,6 +12,7 @@ import { removeFromCrm, updateCrmLead, type CrmLeadWithBusiness } from "@/app/ac
 import type { EmailTemplateRow } from "@/app/actions/email-templates";
 import type { LeadModalTab } from "./CrmLeadModal";
 import { ExternalLink, Phone, Linkedin, Trash2, Mail } from "lucide-react";
+import { ListingProfileLink } from "@/components/ListingSourceLinks";
 import { UnreadIndicator } from "./UnreadIndicator";
 import { useRouter } from "next/navigation";
 import { CRM_LEAD_STATUSES } from "@/lib/crm-statuses";
@@ -63,6 +64,7 @@ export function CrmLeadsTable({
             <th className="text-left p-3 font-medium">Status</th>
             <th className="text-left p-3 font-medium">Phone</th>
             <th className="text-left p-3 font-medium">Website</th>
+            <th className="text-left p-3 font-medium">Listing</th>
             <th className="text-left p-3 font-medium">Lead score</th>
             <th className="text-left p-3 font-medium">Saved</th>
             <th className="text-left p-3 font-medium">Actions</th>
@@ -128,6 +130,9 @@ export function CrmLeadsTable({
                 ) : (
                   "—"
                 )}
+              </td>
+              <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                <ListingProfileLink business={lead.business} />
               </td>
               <td className="p-3">{lead.business.leadScore ?? "—"}</td>
               <td className="p-3 text-muted-foreground">

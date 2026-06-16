@@ -79,7 +79,19 @@ export async function GET(request: NextRequest) {
     orderBy: Object.keys(orderBy).length ? orderBy : { name: "asc" },
     skip: (page - 1) * limit,
     take: limit,
-    ...(includeZipSearch && { include: { zipSearch: { select: { id: true, zipCode: true, countryCode: true } } } }),
+    ...(includeZipSearch && {
+      include: {
+        zipSearch: {
+          select: {
+            id: true,
+            zipCode: true,
+            countryCode: true,
+            searchSource: true,
+            searchQuery: true,
+          },
+        },
+      },
+    }),
   };
   const countArg = { where };
   const [businesses, total] = await Promise.all([

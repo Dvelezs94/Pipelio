@@ -23,6 +23,7 @@ import {
   pickLastVisitedFromBusinesses,
 } from "@/hooks/useVisitedBusinesses";
 import { ChevronLeft, ChevronRight, ExternalLink, Phone, Linkedin, UserPlus, Check, EyeOff, Eye } from "lucide-react";
+import { ListingProfileLink } from "@/components/ListingSourceLinks";
 
 const PAGE_SIZES = [10, 25, 50, 100];
 const SORT_OPTIONS = [
@@ -264,6 +265,7 @@ export function BusinessTable({
               </th>
               <th className="text-left p-3 font-medium">Phone</th>
               <th className="text-left p-3 font-medium">Website</th>
+              <th className="text-left p-3 font-medium">Listing profile</th>
               <th className="text-left p-3 font-medium">LinkedIn</th>
               <th className="text-left p-3 font-medium">Address</th>
               {savedToCrmIds !== undefined && (
@@ -320,6 +322,9 @@ export function BusinessTable({
                   ) : (
                     "—"
                   )}
+                </td>
+                <td className="p-3">
+                  <ListingProfileLink business={b} />
                 </td>
                 <td className="p-3">
                   <a

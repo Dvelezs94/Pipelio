@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { sourceUrlFromPlaceId } from "@/lib/listing-source";
 import {
   computeTechLeadScore,
   estimateTechSize,
@@ -141,20 +142,23 @@ export async function importScrapedCompanies(
     input.searchLabel
   );
 
-  const leads: TechLead[] = [];
+  const rows: Array<{ lead: TechLead; profileUrl: string | null }> = [];
   const seen = new Set<string>();
   for (const company of input.companies) {
     const lead = toTechLead(source, company);
     if (!lead || seen.has(lead.externalId)) continue;
     seen.add(lead.externalId);
-    leads.push(lead);
+    rows.push({
+      lead,
+      profileUrl: company.profileUrl?.trim() || sourceUrlFromPlaceId(lead.externalId),
+    });
   }
 
-  if (leads.length === 0) {
+  if (rows.length === 0) {
     return { imported: 0, skipped: 0, total: 0, searchId };
   }
 
-  const toCreate = leads.map((lead) => {
+  const toCreate = rows.map(({ lead, profileUrl }) => {
     const leadScore = computeTechLeadScore({
       website: lead.website,
       email: lead.email,
@@ -180,6 +184,7 @@ export async function importScrapedCompanies(
       zipSearchId: searchId,
       domain: extractDomain(lead.website),
       leadScore,
+      sourceUrl: profileUrl,
     };
   });
 

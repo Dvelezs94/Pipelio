@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Pipelio Scraper",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Scrape SaaS and software company listings (Clutch, G2, Crunchbase, Product Hunt, YC, etc.) and send them to your Pipelio pipeline.",
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": [

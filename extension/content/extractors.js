@@ -27,43 +27,27 @@
       industry: "Software Development",
       extract() {
         const u = U();
-        const cards = u.queryAll([
-          "li.provider-row",
-          "div.provider-row",
-          "article.provider",
-          "div[data-company-id]",
-          "a.directory_profile",
-          "a[href*='/profile/']",
-        ]);
+        const cards = u.queryAll(["li.provider-row", "div.provider-row", "article.provider"]);
         const results = [];
         const seenProfiles = new Set();
 
         for (const card of cards) {
           if (u.isSent(card)) continue;
 
-          const link =
-            card.tagName === "A" && card.href?.includes("/profile/")
-              ? card
-              : card.querySelector("a[href*='/profile/'], a.directory_profile, h3 a, h2 a");
+          const titleLink = card.querySelector(
+            "h3.company-title a, h3 a[href*='/profile/'], .company-title a[href*='/profile/']"
+          );
+          const profileUrl = u.absUrl(titleLink?.href || u.firstHref(card, ["a[href*='/profile/']"]));
+          if (!profileUrl || !profileUrl.includes("/profile/")) continue;
 
-          const name = link
-            ? u.text(link)
-            : u.firstText(card, [
-                "h3.company-title a",
-                "h3 a",
-                ".company-title",
-                "a.company-name",
-                "[class*='company-title'] a",
-              ]);
+          let name = u.text(titleLink);
+          if (!u.isLikelyCompanyName(name)) {
+            name = u.nameFromClutchProfileUrl(profileUrl);
+          }
+          if (!u.isLikelyCompanyName(name)) continue;
 
-          if (!name || name.length < 2) continue;
-
-          const profileUrl = link
-            ? u.absUrl(link.href)
-            : u.firstHref(card, ["h3.company-title a", "h3 a", "a[href*='/profile/']"]);
-
-          if (profileUrl && seenProfiles.has(profileUrl)) continue;
-          if (profileUrl) seenProfiles.add(profileUrl);
+          if (seenProfiles.has(profileUrl)) continue;
+          seenProfiles.add(profileUrl);
 
           const website = u.firstHref(card, [
             "a[href*='website']",
@@ -71,20 +55,20 @@
             "a[data-link-type='website']",
           ]);
           const ratingRaw = u.firstText(card, [
-            ".rating",
-            "[class*='rating']",
+            ".rating-reviews span.rating",
             "span[itemprop='ratingValue']",
+            ".rating",
           ]);
           const reviewsRaw = u.firstText(card, [
-            ".reviews-count",
-            "[class*='review-count']",
+            ".rating-reviews .reviews-count",
             "span[itemprop='reviewCount']",
+            ".reviews-count",
           ]);
           const location = u.firstText(card, [".locality", ".location", "[class*='location']"]);
           const category = u.firstText(card, [".tagline", ".categories", "[class*='tagline']"]);
 
           results.push({
-            externalId: profileUrl || `clutch:name:${name.toLowerCase().slice(0, 60)}`,
+            externalId: profileUrl,
             name,
             profileUrl,
             website: website && !website.includes("clutch.co") ? website : null,

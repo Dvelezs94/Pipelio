@@ -27,6 +27,8 @@ import { EmailResearchPanel } from "./EmailResearchPanel";
 import type { CrmLeadRow } from "./CrmLeadsTable";
 import type { EmailTemplateRow } from "@/app/actions/email-templates";
 import { AiTextField } from "@/components/AiTextField";
+import { ListingProfileLink, ListingSearchOrigin } from "@/components/ListingSourceLinks";
+import { resolveBusinessSourceUrl, sourceLabelForBusiness } from "@/lib/listing-source";
 import { cn } from "@/lib/utils";
 import { CRM_LEAD_STATUSES, CRM_LEAD_STATUS_LABEL } from "@/lib/crm-statuses";
 import {
@@ -257,6 +259,22 @@ export function CrmLeadModal({
                       </dd>
                     </div>
                   )}
+                  {resolveBusinessSourceUrl(b) && (
+                    <div>
+                      <dt className="text-muted-foreground">Listing profile</dt>
+                      <dd>
+                        <ListingProfileLink business={b} className="flex items-center gap-1 text-primary hover:underline" />
+                      </dd>
+                    </div>
+                  )}
+                  {b.zipSearch && (
+                    <div>
+                      <dt className="text-muted-foreground">Found via</dt>
+                      <dd>
+                        <ListingSearchOrigin zipSearch={b.zipSearch} />
+                      </dd>
+                    </div>
+                  )}
                   <div>
                     <dt className="text-muted-foreground">Industry</dt>
                     <dd>{b.industry ?? "—"}</dd>
@@ -277,6 +295,17 @@ export function CrmLeadModal({
               </section>
 
               <section className="flex flex-wrap gap-2">
+                {resolveBusinessSourceUrl(b) && (
+                  <a
+                    href={resolveBusinessSourceUrl(b)!}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    View on {sourceLabelForBusiness(b)}
+                  </a>
+                )}
                 {b.website && (
                   <a
                     href={b.website.startsWith("http") ? b.website : `https://${b.website}`}
