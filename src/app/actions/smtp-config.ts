@@ -13,25 +13,13 @@ import {
   legacySmtpSecurity,
   smtpSecurityToLegacy,
 } from "@/lib/mail-config";
+import {
+  describeImapConfigGaps,
+  describeSmtpConfigGaps,
+  type SmtpConfigRow,
+} from "@/lib/smtp-status";
 
-export type SmtpConfigRow = {
-  host: string | null;
-  port: number;
-  secure: boolean;
-  smtpSecurity: ConnectionSecurity;
-  smtpAuth: AuthMethod;
-  username: string | null;
-  password: string | null;
-  fromEmail: string | null;
-  fromName: string | null;
-  imapHost: string | null;
-  imapPort: number;
-  imapSecure: boolean;
-  imapSecurity: ConnectionSecurity;
-  imapUsername: string | null;
-  imapPassword: string | null;
-  inboxLastSyncedAt: string | null;
-};
+export type { SmtpConfigRow };
 
 export type ActionResult = { success: true; data?: unknown } | { success: false; error: string };
 
@@ -45,36 +33,6 @@ async function resolveSmtpConfig(formData?: SmtpConfigRow): Promise<SmtpConfigRo
     password: formData.password?.trim() || saved.password,
     imapPassword: formData.imapPassword?.trim() || saved.imapPassword,
   };
-}
-
-function smtpRequiredMissing(row: SmtpConfigRow): boolean {
-  return describeSmtpConfigGaps(row).length > 0;
-}
-
-/** Human-readable list of missing SMTP fields for the active business. */
-export function describeSmtpConfigGaps(row: SmtpConfigRow): string[] {
-  const gaps: string[] = [];
-  if (!row.host?.trim()) gaps.push("SMTP host");
-  if (!row.fromEmail?.trim()) gaps.push("from email");
-  if (row.smtpAuth !== "none") {
-    if (!row.username?.trim()) gaps.push("username");
-    if (!row.password?.trim()) gaps.push("password");
-  }
-  return gaps;
-}
-
-export function isSmtpConfigured(row: SmtpConfigRow): boolean {
-  return !smtpRequiredMissing(row);
-}
-
-export function describeImapConfigGaps(row: SmtpConfigRow): string[] {
-  const gaps: string[] = [];
-  if (!row.imapHost?.trim() && !row.host?.trim()) gaps.push("IMAP host (or SMTP host)");
-  const username = row.imapUsername?.trim() || row.username?.trim();
-  const password = row.imapPassword?.trim() || row.password?.trim();
-  if (!username) gaps.push("IMAP username (or SMTP username)");
-  if (!password) gaps.push("IMAP password (or SMTP password)");
-  return gaps;
 }
 
 export async function getSmtpConfigStatus(): Promise<{ configured: boolean; issues: string[] }> {

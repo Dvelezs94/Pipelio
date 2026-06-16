@@ -11,7 +11,8 @@ import { getProposalSender } from "@/app/actions/proposal-sender";
 import { sendMail } from "@/lib/mail";
 import { renderTemplate, buildTemplateVars } from "@/lib/email-templates";
 import { formatInboxBodyForDisplay } from "@/lib/email-parse";
-import { getSmtpConfig, describeSmtpConfigGaps } from "@/app/actions/smtp-config";
+import { getSmtpConfig } from "@/app/actions/smtp-config";
+import { describeSmtpConfigGaps } from "@/lib/smtp-status";
 import { requireWorkspaceId } from "@/lib/workspace";
 
 async function getTemplateVarsForBusiness(business: {
