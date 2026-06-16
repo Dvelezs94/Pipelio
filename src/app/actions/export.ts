@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { sourceUrlFromPlaceId } from "@/lib/listing-source";
 import { requireWorkspaceId } from "@/lib/workspace";
 
 /**
@@ -21,11 +22,13 @@ export async function exportSearchAsCsv(searchId: string): Promise<string> {
     "Reviews",
     "Phone",
     "Website",
+    "Listing profile URL",
     "Address",
     "Lead Score",
   ];
-  const rows = businesses.map((b) =>
-    [
+  const rows = businesses.map((b) => {
+    const listingUrl = b.sourceUrl?.trim() || sourceUrlFromPlaceId(b.placeId) || "";
+    return [
       b.name,
       b.industry ?? "",
       b.size ?? "",
@@ -33,10 +36,11 @@ export async function exportSearchAsCsv(searchId: string): Promise<string> {
       b.reviews,
       b.phone ?? "",
       b.website ?? "",
+      listingUrl,
       (b.address ?? "").replace(/"/g, '""'),
       b.leadScore ?? "",
-    ].map((c) => `"${String(c).replace(/"/g, '""')}"`)
-  );
+    ].map((c) => `"${String(c).replace(/"/g, '""')}"`);
+  });
   return [headers.map((h) => `"${h}"`).join(","), ...rows.map((r) => r.join(","))].join("\n");
 }
 
@@ -50,17 +54,21 @@ export async function exportSearchAsJson(searchId: string): Promise<string> {
     orderBy: [{ industry: "asc" }, { name: "asc" }],
   });
   return JSON.stringify(
-    businesses.map((b) => ({
-      name: b.name,
-      industry: b.industry,
-      size: b.size,
-      rating: b.rating,
-      reviews: b.reviews,
-      phone: b.phone,
-      website: b.website,
-      address: b.address,
-      leadScore: b.leadScore,
-    })),
+    businesses.map((b) => {
+      const listingUrl = b.sourceUrl?.trim() || sourceUrlFromPlaceId(b.placeId);
+      return {
+        name: b.name,
+        industry: b.industry,
+        size: b.size,
+        rating: b.rating,
+        reviews: b.reviews,
+        phone: b.phone,
+        website: b.website,
+        sourceUrl: listingUrl,
+        address: b.address,
+        leadScore: b.leadScore,
+      };
+    }),
     null,
     2
   );

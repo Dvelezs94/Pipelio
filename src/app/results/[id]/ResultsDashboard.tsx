@@ -21,6 +21,7 @@ import {
 } from "@/hooks/useVisitedBusinesses";
 import { cn } from "@/lib/utils";
 import { formatSourcesLabel } from "@/lib/search-sources";
+import { ListingProfileLink, ListingSearchOrigin } from "@/components/ListingSourceLinks";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -53,6 +54,7 @@ export interface ResultsDashboardProps {
     leadScore: number | null;
     dismissedAt: string | null;
     viewedAt: string | null;
+    sourceUrl?: string | null;
   }>;
   initialCrmLeadIds: string[];
   mapApiKey: string;
@@ -77,6 +79,7 @@ function toRecord(b: ResultsDashboardProps["initialBusinesses"][0]): BusinessRec
     leadScore: b.leadScore,
     dismissedAt: b.dismissedAt ?? undefined,
     viewedAt: b.viewedAt ?? undefined,
+    sourceUrl: b.sourceUrl ?? undefined,
   };
 }
 
@@ -204,6 +207,14 @@ export function ResultsDashboard({
             <div>
               <h1 className="text-xl font-semibold">Results: {title}</h1>
               <p className="text-sm text-muted-foreground">{subtitle}</p>
+              {searchSource?.startsWith("browser_extension:") && searchQuery?.startsWith("http") && (
+                <p className="text-sm mt-1">
+                  <span className="text-muted-foreground">Listing page: </span>
+                  <ListingSearchOrigin
+                    zipSearch={{ id: searchId, zipCode, countryCode: "US", searchSource, searchQuery }}
+                  />
+                </p>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -315,17 +326,20 @@ export function ResultsDashboard({
                         )}
                       >
                         <span>{b.name}</span>
-                        {b.website && (
-                          <a
-                            href={b.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary text-sm hover:underline"
-                            onPointerDown={() => markVisited(b.id)}
-                          >
-                            Website
-                          </a>
-                        )}
+                        <div className="flex items-center gap-3 shrink-0">
+                          <ListingProfileLink business={b} />
+                          {b.website && (
+                            <a
+                              href={b.website}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary text-sm hover:underline"
+                              onPointerDown={() => markVisited(b.id)}
+                            >
+                              Website
+                            </a>
+                          )}
+                        </div>
                       </div>
                     )}
                   />

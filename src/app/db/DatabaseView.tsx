@@ -32,6 +32,7 @@ import {
   Eye,
 } from "lucide-react";
 import { ListingProfileLink, ListingSearchOrigin } from "@/components/ListingSourceLinks";
+import { resolveBusinessSourceUrl } from "@/lib/listing-source";
 
 type ZipSearchRef = {
   id: string;
@@ -339,7 +340,23 @@ export function DatabaseView() {
                     <tbody>
                       {businesses.map((b) => (
                         <tr key={b.id} className="border-b hover:bg-muted/30">
-                          <td className="p-3 font-medium">{b.name}</td>
+                          <td className="p-3 font-medium">
+                            {(() => {
+                              const listingUrl = resolveBusinessSourceUrl(b);
+                              if (!listingUrl) return b.name;
+                              return (
+                                <a
+                                  href={listingUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:text-primary hover:underline"
+                                  title={listingUrl}
+                                >
+                                  {b.name}
+                                </a>
+                              );
+                            })()}
+                          </td>
                           <td className="p-3 text-muted-foreground">{b.industry ?? "—"}</td>
                           <td className="p-3">{b.size ?? "—"}</td>
                           <td className="p-3">{b.rating != null ? `★ ${b.rating}` : "—"}</td>

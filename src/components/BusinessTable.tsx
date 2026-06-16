@@ -24,6 +24,7 @@ import {
 } from "@/hooks/useVisitedBusinesses";
 import { ChevronLeft, ChevronRight, ExternalLink, Phone, Linkedin, UserPlus, Check, EyeOff, Eye } from "lucide-react";
 import { ListingProfileLink } from "@/components/ListingSourceLinks";
+import { resolveBusinessSourceUrl } from "@/lib/listing-source";
 
 const PAGE_SIZES = [10, 25, 50, 100];
 const SORT_OPTIONS = [
@@ -287,7 +288,24 @@ export function BusinessTable({
                 data-last-visited={isLast ? "true" : "false"}
                 className="border-b"
               >
-                <td className="p-3 font-medium">{b.name}</td>
+                <td className="p-3 font-medium">
+                  {(() => {
+                    const listingUrl = resolveBusinessSourceUrl(b);
+                    if (!listingUrl) return b.name;
+                    return (
+                      <a
+                        href={listingUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-primary hover:underline"
+                        title={listingUrl}
+                        onPointerDown={() => handleExternalLinkClick(b.id)}
+                      >
+                        {b.name}
+                      </a>
+                    );
+                  })()}
+                </td>
                 <td className="p-3 text-muted-foreground">{b.industry ?? "—"}</td>
                 <td className="p-3">{b.size ?? "—"}</td>
                 <td className="p-3">{b.rating != null ? `★ ${b.rating}` : "—"}</td>

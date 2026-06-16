@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { BusinessRecord } from "@/types";
+import { resolveBusinessSourceUrl, sourceLabelForBusiness } from "@/lib/listing-source";
 import { Loader2 } from "lucide-react";
 
 declare global {
@@ -71,11 +72,14 @@ export function MapView({ businesses, center, apiKey, className }: MapViewProps)
       for (const b of withCoords) {
         const pos = { lat: b.lat!, lng: b.lng! };
         const marker = new g.Marker({ position: pos, map, title: b.name });
+        const listingUrl = resolveBusinessSourceUrl(b);
+        const listingLabel = listingUrl ? sourceLabelForBusiness(b) : null;
         const infoContent = `
           <div style="padding:8px;min-width:180px;">
             <strong>${escapeHtml(b.name)}</strong><br/>
             <span style="color:#666">${escapeHtml(b.industry ?? "—")}</span><br/>
             ${b.rating != null ? `★ ${b.rating} (${b.reviews} reviews)` : ""}<br/>
+            ${listingUrl ? `<a href="${escapeHtml(listingUrl)}" target="_blank" rel="noopener">${escapeHtml(listingLabel ?? "Listing profile")}</a><br/>` : ""}
             ${b.website ? `<a href="${escapeHtml(b.website)}" target="_blank" rel="noopener">Website</a>` : ""}
           </div>
         `;

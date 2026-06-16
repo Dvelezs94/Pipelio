@@ -7,18 +7,18 @@ import {
   sourceLabelForBusiness,
 } from "@/lib/listing-source";
 
-type ZipSearchRef = {
-  id: string;
-  zipCode: string;
-  countryCode: string;
+type ZipSearchOriginRef = {
+  id?: string;
+  zipCode?: string;
+  countryCode?: string;
   searchSource?: string | null;
   searchQuery?: string | null;
 };
 
-type BusinessSourceFields = {
+export type BusinessSourceFields = {
   sourceUrl?: string | null;
   placeId?: string | null;
-  zipSearch?: ZipSearchRef | null;
+  zipSearch?: ZipSearchOriginRef | null;
 };
 
 export function ListingProfileLink({
@@ -44,7 +44,7 @@ export function ListingSearchOrigin({
   zipSearch,
   className = "text-primary hover:underline",
 }: {
-  zipSearch?: ZipSearchRef | null;
+  zipSearch?: ZipSearchOriginRef | null;
   className?: string;
 }) {
   if (!zipSearch) return <>—</>;
@@ -67,7 +67,7 @@ export function ListingSearchOrigin({
   if (zipSearch.zipCode) {
     return (
       <span className="text-muted-foreground">
-        {zipSearch.zipCode} ({zipSearch.countryCode})
+        {zipSearch.zipCode} ({zipSearch.countryCode ?? "US"})
       </span>
     );
   }
