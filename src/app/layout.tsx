@@ -20,10 +20,6 @@ export const metadata: Metadata = {
   title: appTitle(),
   description: APP_DESCRIPTION,
   applicationName: APP_NAME,
-  icons: {
-    icon: [{ url: "/pipelio-logo.png", type: "image/png" }],
-    apple: [{ url: "/pipelio-logo.png", type: "image/png" }],
-  },
 };
 
 export default async function RootLayout({

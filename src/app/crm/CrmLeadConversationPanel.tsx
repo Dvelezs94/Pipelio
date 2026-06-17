@@ -348,10 +348,10 @@ export function CrmLeadConversationPanel({
       <div className="shrink-0 mt-3 rounded-2xl border bg-card shadow-sm p-3 space-y-2">
         {smtpStatus && !smtpStatus.configured && (
           <div
-            className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200"
+            className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-950 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100"
             role="status"
           >
-            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
             <p>
               SMTP is not set up for this business
               {smtpStatus.issues.length > 0 ? ` (missing: ${smtpStatus.issues.join(", ")})` : ""}.
