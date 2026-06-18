@@ -126,12 +126,28 @@ export async function saveToCrm(businessId: string): Promise<CrmActionResult> {
   }
 }
 
-/** Remove a business from the CRM. */
+/** Remove a business from the CRM and dismiss it in the database. */
 export async function removeFromCrm(businessId: string): Promise<CrmActionResult> {
   try {
-    await prisma.crmLead.deleteMany({ where: { businessId } });
+    const workspaceId = await requireWorkspaceId();
+    const business = await prisma.business.findFirst({
+      where: { id: businessId, workspaceId },
+      select: { id: true },
+    });
+    if (!business) return { success: false, error: "Business not found." };
+
+    await prisma.$transaction([
+      prisma.crmLead.deleteMany({ where: { businessId } }),
+      prisma.business.update({
+        where: { id: businessId },
+        data: { dismissedAt: new Date() },
+      }),
+    ]);
+
     revalidatePath("/crm");
     revalidatePath("/");
+    revalidatePath("/db");
+    revalidatePath("/results", "layout");
     return { success: true };
   } catch (e) {
     console.error("removeFromCrm", e);
