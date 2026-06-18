@@ -9,6 +9,7 @@ import type { LeadModalTab } from "./CrmLeadModal";
 import { GripVertical, Trash2, FileText, Mail } from "lucide-react";
 import { UnreadIndicator } from "./UnreadIndicator";
 import { cn } from "@/lib/utils";
+import { sortCrmLeadsInColumn } from "@/lib/crm-lead-sort";
 import { CrmLeadTagList } from "./CrmLeadTags";
 import type { CrmPipelineColumnRow } from "@/app/actions/crm-pipeline";
 
@@ -140,22 +141,13 @@ function DropSlot({
   );
 }
 
-function sortLeadsInColumn(leads: CrmLeadRow[]) {
-  return [...leads].sort((a, b) => {
-    const ao = a.sortOrder ?? Number.MAX_SAFE_INTEGER;
-    const bo = b.sortOrder ?? Number.MAX_SAFE_INTEGER;
-    if (ao !== bo) return ao - bo;
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-  });
-}
-
 function getPreviewColumnLeads(
   leads: CrmLeadRow[],
   columnId: string,
   draggingLead: CrmLeadRow | null,
   dropTarget: { columnId: string; index: number } | null
 ): CrmLeadRow[] {
-  const sorted = sortLeadsInColumn(leads.filter((l) => l.status === columnId));
+  const sorted = sortCrmLeadsInColumn(leads.filter((l) => l.status === columnId));
 
   if (!draggingLead) return sorted;
 
@@ -188,7 +180,7 @@ function reorderLeadsLocal(
   if (!moving) return leads;
 
   const rest = leads.filter((l) => l.businessId !== businessId);
-  const targetColumn = sortLeadsInColumn(rest.filter((l) => l.status === targetStatus));
+  const targetColumn = sortCrmLeadsInColumn(rest.filter((l) => l.status === targetStatus));
   const insertAt = Math.max(0, Math.min(targetIndex, targetColumn.length));
   targetColumn.splice(insertAt, 0, { ...moving, status: targetStatus });
 
@@ -345,7 +337,7 @@ export function CrmCanvas({
             <h3 className="font-semibold text-sm">
               {col.label}{" "}
               <span className="text-muted-foreground">
-                ({sortLeadsInColumn(localLeads.filter((l) => l.status === col.id)).length})
+                ({sortCrmLeadsInColumn(localLeads.filter((l) => l.status === col.id)).length})
               </span>
             </h3>
           </div>

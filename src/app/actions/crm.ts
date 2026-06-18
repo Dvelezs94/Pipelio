@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { getWorkspacePipelineStatusValues } from "@/app/actions/crm-pipeline";
+import { sortCrmLeadsForTable } from "@/lib/crm-lead-sort";
 import { ensureManualZipSearch, manualZipSearchId, requireWorkspaceId } from "@/lib/workspace";
 
 export type CrmActionResult = { success: true; data?: { leadId: string } } | { success: false; error: string };
@@ -283,14 +284,7 @@ export async function getCrmLeads(): Promise<CrmLeadWithBusiness[]> {
     ...lead,
     unreadInboxCount: countUnreadInbox(inbox, inboxLastReadAt),
   })) as CrmLeadWithBusiness[];
-  typed.sort((a, b) => {
-    if (a.status !== b.status) return a.status.localeCompare(b.status);
-    const ao = a.sortOrder ?? 1e9;
-    const bo = b.sortOrder ?? 1e9;
-    if (ao !== bo) return ao - bo;
-    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-  });
-  return typed;
+  return sortCrmLeadsForTable(typed);
 }
 
 /** Move a lead to a new status and/or position. Updates status and sortOrder so the lead appears at newIndex in the column. */

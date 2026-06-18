@@ -41,7 +41,7 @@ export async function uniqueColumnValue(
     existing.map((c) => c.value).filter((v) => v !== excludeValue)
   );
 
-  let base = slugifyColumnValue(label);
+  const base = slugifyColumnValue(label);
   let value = base;
   let n = 0;
   while (taken.has(value)) {
