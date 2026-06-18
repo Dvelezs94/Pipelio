@@ -11,16 +11,19 @@ import type { CrmLeadRow } from "./CrmLeadsTable";
 import type { ProposalSenderRow } from "@/app/actions/proposal-sender";
 import type { SmtpConfigRow } from "@/app/actions/smtp-config";
 import type { EmailTemplateRow } from "@/app/actions/email-templates";
+import type { CrmPipelineColumnRow } from "@/app/actions/crm-pipeline";
 import { Users } from "lucide-react";
 
 export function CrmWorkspace({
   leads,
+  columns,
   proposalSender,
   smtpConfig,
   templates,
   workspaceName,
 }: {
   leads: CrmLeadRow[];
+  columns: CrmPipelineColumnRow[];
   proposalSender: ProposalSenderRow | null;
   smtpConfig: SmtpConfigRow;
   templates: EmailTemplateRow[];
@@ -67,7 +70,7 @@ export function CrmWorkspace({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <CrmViewToggle leads={leads} templates={templates} />
+            <CrmViewToggle leads={leads} columns={columns} templates={templates} />
           </CardContent>
         </Card>
       </main>

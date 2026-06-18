@@ -43,6 +43,19 @@ model Workspace {
   proposalSender ProposalSender?
   emailTemplates CrmEmailTemplate[]
   inboxMessages  CrmInboxMessage[]
+  pipelineColumns CrmPipelineColumn[]
+}
+
+model CrmPipelineColumn {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  value       String
+  label       String
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  @@unique([workspaceId, value])
 }
 
 model ZipSearch {

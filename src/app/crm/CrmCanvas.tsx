@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateCrmLeadOrder, removeFromCrm } from "@/app/actions/crm";
 import { Button } from "@/components/ui/button";
@@ -8,24 +8,24 @@ import type { CrmLeadRow } from "./CrmLeadsTable";
 import type { LeadModalTab } from "./CrmLeadModal";
 import { GripVertical, Trash2, FileText, Mail } from "lucide-react";
 import { UnreadIndicator } from "./UnreadIndicator";
-import { CRM_LEAD_STATUSES } from "@/lib/crm-statuses";
 import { cn } from "@/lib/utils";
 import { CrmLeadTagList } from "./CrmLeadTags";
+import type { CrmPipelineColumnRow } from "@/app/actions/crm-pipeline";
 
-const STATUS_COLUMNS = CRM_LEAD_STATUSES.map((s) => ({ id: s.value, label: s.label }));
+type PipelineColumn = Pick<CrmPipelineColumnRow, "value" | "label">;
 
 type DragPayload = { businessId: string; crmLeadId: string };
 
 function LeadCard({
   lead,
-  isDragging,
+  isDragPreview,
   onOpenLead,
   onRemove,
   onDragStart,
   onDragEnd,
 }: {
   lead: CrmLeadRow;
-  isDragging?: boolean;
+  isDragPreview?: boolean;
   onOpenLead: (lead: CrmLeadRow, tab?: LeadModalTab) => void;
   onRemove: () => void;
   onDragStart: (e: React.DragEvent, payload: DragPayload, cardEl: HTMLElement | null) => void;
@@ -38,8 +38,10 @@ function LeadCard({
     <div
       ref={cardRef}
       className={cn(
-        "rounded-lg border bg-card p-3 shadow-sm hover:border-primary/50 transition-all",
-        isDragging && "opacity-35 scale-[0.98]"
+        "rounded-lg border bg-card p-3 shadow-sm transition-all duration-150",
+        isDragPreview
+          ? "border-primary ring-2 ring-primary/40 shadow-md scale-[1.02]"
+          : "hover:border-primary/50"
       )}
     >
       <div className="flex items-start gap-2">
@@ -50,7 +52,7 @@ function LeadCard({
           }
           onDragEnd={onDragEnd}
           className="cursor-grab active:cursor-grabbing touch-none shrink-0 pt-0.5 text-muted-foreground hover:text-foreground"
-          title="Drag to move"
+          title="Drag to reorder or move"
         >
           <GripVertical className="h-4 w-4" />
         </div>
@@ -113,12 +115,12 @@ function LeadCard({
 
 function DropSlot({
   isActive,
-  previewLead,
+  isDragging,
   onDragOver,
   onDrop,
 }: {
   isActive: boolean;
-  previewLead?: CrmLeadRow | null;
+  isDragging: boolean;
   onDragOver: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent) => void;
 }) {
@@ -126,21 +128,13 @@ function DropSlot({
     <div
       className={cn(
         "flex-shrink-0 transition-all duration-150 rounded",
-        isActive ? "py-1" : "h-0.5 -my-px"
+        isDragging ? (isActive ? "h-3 py-0.5" : "h-2") : "h-0.5 -my-px"
       )}
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
-      {isActive && previewLead && (
-        <div className="rounded-lg border-2 border-dashed border-primary/60 bg-primary/10 px-3 py-2 mb-1 shadow-sm pointer-events-none">
-          <p className="font-medium text-sm truncate">{previewLead.business.name}</p>
-          <p className="text-xs text-muted-foreground truncate">
-            {previewLead.business.industry ?? "—"} · Score {previewLead.business.leadScore ?? "—"}
-          </p>
-        </div>
-      )}
-      {isActive && !previewLead && (
-        <div className="h-0.5 w-full rounded-full bg-primary mx-1" aria-hidden />
+      {isActive && (
+        <div className="h-0.5 w-full rounded-full bg-primary shadow-[0_0_6px_rgba(var(--primary),0.5)]" aria-hidden />
       )}
     </div>
   );
@@ -155,24 +149,82 @@ function sortLeadsInColumn(leads: CrmLeadRow[]) {
   });
 }
 
+function getPreviewColumnLeads(
+  leads: CrmLeadRow[],
+  columnId: string,
+  draggingLead: CrmLeadRow | null,
+  dropTarget: { columnId: string; index: number } | null
+): CrmLeadRow[] {
+  const sorted = sortLeadsInColumn(leads.filter((l) => l.status === columnId));
+
+  if (!draggingLead) return sorted;
+
+  const without = sorted.filter((l) => l.id !== draggingLead.id);
+
+  if (!dropTarget) {
+    return draggingLead.status === columnId ? without : sorted;
+  }
+
+  if (dropTarget.columnId !== columnId) {
+    return draggingLead.status === columnId ? without : sorted;
+  }
+
+  let insertAt = dropTarget.index;
+  if (draggingLead.status === columnId) {
+    const fromIdx = sorted.findIndex((l) => l.id === draggingLead.id);
+    if (fromIdx !== -1 && fromIdx < insertAt) insertAt -= 1;
+  }
+  insertAt = Math.max(0, Math.min(insertAt, without.length));
+  return [...without.slice(0, insertAt), draggingLead, ...without.slice(insertAt)];
+}
+
+function reorderLeadsLocal(
+  leads: CrmLeadRow[],
+  businessId: string,
+  targetStatus: string,
+  targetIndex: number
+): CrmLeadRow[] {
+  const moving = leads.find((l) => l.businessId === businessId);
+  if (!moving) return leads;
+
+  const rest = leads.filter((l) => l.businessId !== businessId);
+  const targetColumn = sortLeadsInColumn(rest.filter((l) => l.status === targetStatus));
+  const insertAt = Math.max(0, Math.min(targetIndex, targetColumn.length));
+  targetColumn.splice(insertAt, 0, { ...moving, status: targetStatus });
+
+  const withNewSort = targetColumn.map((l, i) => ({ ...l, sortOrder: i * 10 }));
+  const otherStatuses = rest.filter((l) => l.status !== targetStatus);
+  return [...otherStatuses, ...withNewSort];
+}
+
 export function CrmCanvas({
   leads,
+  columns,
   onOpenLead,
 }: {
   leads: CrmLeadRow[];
+  columns: PipelineColumn[];
   onOpenLead: (lead: CrmLeadRow, tab?: LeadModalTab) => void;
 }) {
   const router = useRouter();
+  const [localLeads, setLocalLeads] = useState(leads);
   const [dropTarget, setDropTarget] = useState<{ columnId: string; index: number } | null>(null);
   const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
   const [hoverColumnId, setHoverColumnId] = useState<string | null>(null);
   const dragPayloadRef = useRef<DragPayload | null>(null);
 
-  const draggingLead = draggingLeadId ? leads.find((l) => l.id === draggingLeadId) ?? null : null;
+  useEffect(() => {
+    setLocalLeads(leads);
+  }, [leads]);
 
-  const byStatus = STATUS_COLUMNS.map((col) => ({
-    ...col,
-    leads: sortLeadsInColumn(leads.filter((l) => l.status === col.id)),
+  const draggingLead = draggingLeadId
+    ? localLeads.find((l) => l.id === draggingLeadId) ?? null
+    : null;
+
+  const byStatus = columns.map((col) => ({
+    id: col.value,
+    label: col.label,
+    leads: getPreviewColumnLeads(localLeads, col.value, draggingLead, dropTarget),
   }));
 
   function handleDragStart(
@@ -193,11 +245,12 @@ export function CrmCanvas({
       clone.style.top = "-9999px";
       clone.style.left = "-9999px";
       clone.style.width = `${rect.width}px`;
-      clone.style.opacity = "0.92";
+      clone.style.opacity = "0.95";
       clone.style.pointerEvents = "none";
-      clone.style.boxShadow = "0 8px 24px rgba(0,0,0,0.2)";
+      clone.style.boxShadow = "0 12px 28px rgba(0,0,0,0.22)";
+      clone.style.borderRadius = "0.5rem";
       document.body.appendChild(clone);
-      e.dataTransfer.setDragImage(clone, rect.width / 2, 24);
+      e.dataTransfer.setDragImage(clone, rect.width / 2, 28);
       setTimeout(() => document.body.removeChild(clone), 0);
     }
   }
@@ -234,18 +287,22 @@ export function CrmCanvas({
   async function handleDrop(e: React.DragEvent, columnId: string, index: number) {
     e.preventDefault();
     e.stopPropagation();
-    setDropTarget(null);
-    setHoverColumnId(null);
 
     const payload = readDragPayload(e);
-    dragPayloadRef.current = null;
-    setDraggingLeadId(null);
-    if (!payload?.businessId) return;
+    if (!payload?.businessId) {
+      handleDragEnd();
+      return;
+    }
+
+    const previous = localLeads;
+    setLocalLeads((current) => reorderLeadsLocal(current, payload.businessId, columnId, index));
+    handleDragEnd();
 
     const result = await updateCrmLeadOrder(payload.businessId, columnId, index);
     if (result.success) {
       router.refresh();
     } else {
+      setLocalLeads(previous);
       alert(result.error);
     }
   }
@@ -263,7 +320,7 @@ export function CrmCanvas({
     else alert(res.error);
   }
 
-  if (leads.length === 0) {
+  if (localLeads.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-8 text-center">
         No leads yet. Run a search and click &quot;Save to CRM&quot; to add leads here.
@@ -271,22 +328,25 @@ export function CrmCanvas({
     );
   }
 
+  const isDragging = draggingLeadId !== null;
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+    <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1">
       {byStatus.map((col) => (
         <div
           key={col.id}
           className={cn(
-            "rounded-lg border bg-muted/30 min-h-[200px] flex flex-col transition-shadow",
-            draggingLeadId &&
-              hoverColumnId === col.id &&
-              "ring-2 ring-primary/40 shadow-md"
+            "w-72 shrink-0 rounded-lg border bg-muted/30 min-h-[200px] flex flex-col transition-shadow",
+            isDragging && hoverColumnId === col.id && "ring-2 ring-primary/40 shadow-md"
           )}
           onDragLeave={handleDragLeave}
         >
           <div className="p-3 border-b bg-muted/50 rounded-t-lg">
             <h3 className="font-semibold text-sm">
-              {col.label} <span className="text-muted-foreground">({col.leads.length})</span>
+              {col.label}{" "}
+              <span className="text-muted-foreground">
+                ({sortLeadsInColumn(localLeads.filter((l) => l.status === col.id)).length})
+              </span>
             </h3>
           </div>
           <div
@@ -294,20 +354,23 @@ export function CrmCanvas({
             onDragOver={(e) => {
               allowDrop(e);
               setHoverColumnId(col.id);
+              if (!dropTarget || dropTarget.columnId !== col.id) {
+                setDropTarget({ columnId: col.id, index: col.leads.length });
+              }
             }}
-            onDrop={(e) => handleDrop(e, col.id, col.leads.length)}
+            onDrop={(e) => void handleDrop(e, col.id, col.leads.length)}
           >
             {col.leads.map((lead, i) => (
               <div key={lead.id}>
                 <DropSlot
                   isActive={dropTarget?.columnId === col.id && dropTarget?.index === i}
-                  previewLead={draggingLead}
+                  isDragging={isDragging}
                   onDragOver={(e) => handleDragOver(e, col.id, i)}
-                  onDrop={(e) => handleDrop(e, col.id, i)}
+                  onDrop={(e) => void handleDrop(e, col.id, i)}
                 />
                 <LeadCard
                   lead={lead}
-                  isDragging={draggingLeadId === lead.id}
+                  isDragPreview={isDragging && draggingLeadId === lead.id}
                   onOpenLead={onOpenLead}
                   onRemove={() => handleRemove(lead.businessId)}
                   onDragStart={handleDragStart}
@@ -317,9 +380,9 @@ export function CrmCanvas({
             ))}
             <DropSlot
               isActive={dropTarget?.columnId === col.id && dropTarget?.index === col.leads.length}
-              previewLead={draggingLead}
+              isDragging={isDragging}
               onDragOver={(e) => handleDragOver(e, col.id, col.leads.length)}
-              onDrop={(e) => handleDrop(e, col.id, col.leads.length)}
+              onDrop={(e) => void handleDrop(e, col.id, col.leads.length)}
             />
           </div>
         </div>

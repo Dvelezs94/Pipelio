@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { CRM_LEAD_STATUS_VALUES } from "@/lib/crm-statuses";
+import { getWorkspacePipelineStatusValues } from "@/app/actions/crm-pipeline";
 import { ensureManualZipSearch, manualZipSearchId, requireWorkspaceId } from "@/lib/workspace";
 
 export type CrmActionResult = { success: true; data?: { leadId: string } } | { success: false; error: string };
@@ -51,7 +51,7 @@ export async function createManualLead(input: ManualLeadInput): Promise<CrmActio
   if (!name) return { success: false, error: "Company name is required." };
 
   const status = input.status?.trim() || "new";
-  const validStatuses = CRM_LEAD_STATUS_VALUES;
+  const validStatuses = await getWorkspacePipelineStatusValues();
   if (!validStatuses.includes(status)) {
     return { success: false, error: "Invalid status." };
   }
@@ -109,9 +109,11 @@ export async function saveToCrm(businessId: string): Promise<CrmActionResult> {
     const workspaceId = await requireWorkspaceId();
     const business = await prisma.business.findFirst({ where: { id: businessId, workspaceId } });
     if (!business) return { success: false, error: "Business not found." };
+    const validStatuses = await getWorkspacePipelineStatusValues();
+    const defaultStatus = validStatuses.includes("new") ? "new" : validStatuses[0] ?? "new";
     await prisma.crmLead.upsert({
       where: { businessId },
-      create: { businessId, status: "new" },
+      create: { businessId, status: defaultStatus },
       update: {},
     });
     revalidatePath("/crm");
@@ -142,6 +144,12 @@ export async function updateCrmLead(
   data: { status?: string; notes?: string | null; tags?: string[] }
 ): Promise<CrmActionResult> {
   try {
+    if (data.status != null) {
+      const validStatuses = await getWorkspacePipelineStatusValues();
+      if (!validStatuses.includes(data.status)) {
+        return { success: false, error: "Invalid status." };
+      }
+    }
     await prisma.crmLead.updateMany({
       where: { businessId },
       data: {
@@ -297,6 +305,11 @@ export async function updateCrmLeadOrder(
       where: { businessId, business: { workspaceId } },
     });
     if (!lead) return { success: false, error: "Lead not found." };
+
+    const validStatuses = await getWorkspacePipelineStatusValues();
+    if (!validStatuses.includes(newStatus)) {
+      return { success: false, error: "Invalid column." };
+    }
 
     await prisma.crmLead.update({
       where: { businessId },

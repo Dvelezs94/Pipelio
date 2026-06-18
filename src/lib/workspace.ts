@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import { seedDefaultPipelineColumns } from "@/lib/crm-pipeline";
 
 export const WORKSPACE_COOKIE = "workspace-id";
 
@@ -62,6 +63,7 @@ async function seedWorkspaceDefaults(workspaceId: string): Promise<void> {
     update: {},
   });
   await ensureManualZipSearch(workspaceId);
+  await seedDefaultPipelineColumns(workspaceId);
 }
 
 export async function ensureManualZipSearch(workspaceId: string): Promise<void> {

@@ -8,13 +8,17 @@ import { CrmCanvas } from "./CrmCanvas";
 import { CrmLeadModal, type LeadModalTab } from "./CrmLeadModal";
 import { CreateLeadDialog } from "./CreateLeadDialog";
 import type { EmailTemplateRow } from "@/app/actions/email-templates";
+import type { CrmPipelineColumnRow } from "@/app/actions/crm-pipeline";
+import { CrmColumnsDialog } from "./CrmColumnsDialog";
 import { LayoutGrid, Table } from "lucide-react";
 
 export function CrmViewToggle({
   leads,
+  columns,
   templates,
 }: {
   leads: CrmLeadRow[];
+  columns: CrmPipelineColumnRow[];
   templates: EmailTemplateRow[];
 }) {
   const router = useRouter();
@@ -66,20 +70,21 @@ export function CrmViewToggle({
               Table
             </Button>
           </div>
-          <CreateLeadDialog onCreated={handleLeadCreated} />
+          <div className="flex items-center gap-2">
+            <CrmColumnsDialog columns={columns} />
+            <CreateLeadDialog columns={columns} onCreated={handleLeadCreated} />
+          </div>
         </div>
         {view === "table" ? (
-          <CrmLeadsTable leads={leads} templates={templates} onOpenLead={openLead} />
+          <CrmLeadsTable leads={leads} columns={columns} templates={templates} onOpenLead={openLead} />
         ) : (
-          <CrmCanvas
-            leads={leads}
-            onOpenLead={openLead}
-          />
+          <CrmCanvas leads={leads} columns={columns} onOpenLead={openLead} />
         )}
       </div>
 
       <CrmLeadModal
         lead={modalLead}
+        columns={columns}
         templates={templates}
         open={!!modalLeadId}
         onOpenChange={(open) => {

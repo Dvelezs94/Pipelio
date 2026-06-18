@@ -23,10 +23,17 @@ import { createManualLead } from "@/app/actions/crm";
 import { INDUSTRIES, SIZES } from "@/lib/constants";
 import { AiTextField } from "@/components/AiTextField";
 import { Plus } from "lucide-react";
-import { CRM_LEAD_STATUSES } from "@/lib/crm-statuses";
+import type { CrmPipelineColumnRow } from "@/app/actions/crm-pipeline";
 
-export function CreateLeadDialog({ onCreated }: { onCreated?: (leadId: string) => void }) {
+export function CreateLeadDialog({
+  columns,
+  onCreated,
+}: {
+  columns: CrmPipelineColumnRow[];
+  onCreated?: (leadId: string) => void;
+}) {
   const router = useRouter();
+  const defaultStatus = columns.find((c) => c.value === "new")?.value ?? columns[0]?.value ?? "new";
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
@@ -36,7 +43,7 @@ export function CreateLeadDialog({ onCreated }: { onCreated?: (leadId: string) =
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [size, setSize] = useState<string>("");
-  const [status, setStatus] = useState<string>("new");
+  const [status, setStatus] = useState<string>(defaultStatus);
   const [initialNote, setInitialNote] = useState("");
 
   function resetForm() {
@@ -47,7 +54,7 @@ export function CreateLeadDialog({ onCreated }: { onCreated?: (leadId: string) =
     setPhone("");
     setAddress("");
     setSize("");
-    setStatus("new");
+    setStatus(defaultStatus);
     setInitialNote("");
   }
 
@@ -129,7 +136,7 @@ export function CreateLeadDialog({ onCreated }: { onCreated?: (leadId: string) =
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {CRM_LEAD_STATUSES.map((o) => (
+                  {columns.map((o) => (
                     <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
                   ))}
                 </SelectContent>

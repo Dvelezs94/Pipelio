@@ -15,7 +15,7 @@ import { ExternalLink, Phone, Linkedin, Trash2, Mail } from "lucide-react";
 import { ListingProfileLink } from "@/components/ListingSourceLinks";
 import { UnreadIndicator } from "./UnreadIndicator";
 import { useRouter } from "next/navigation";
-import { CRM_LEAD_STATUSES } from "@/lib/crm-statuses";
+import type { CrmPipelineColumnRow } from "@/app/actions/crm-pipeline";
 
 /** Serializable shape when passed from server (Date → string) */
 export type CrmLeadRow = Omit<CrmLeadWithBusiness, "createdAt" | "noteList"> & {
@@ -25,9 +25,11 @@ export type CrmLeadRow = Omit<CrmLeadWithBusiness, "createdAt" | "noteList"> & {
 
 export function CrmLeadsTable({
   leads,
+  columns,
   onOpenLead,
 }: {
   leads: CrmLeadRow[];
+  columns: CrmPipelineColumnRow[];
   templates?: EmailTemplateRow[];
   onOpenLead: (lead: CrmLeadRow, tab?: LeadModalTab) => void;
 }) {
@@ -95,7 +97,7 @@ export function CrmLeadsTable({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {CRM_LEAD_STATUSES.map((opt) => (
+                    {columns.map((opt) => (
                       <SelectItem key={opt.value} value={opt.value}>
                         {opt.label}
                       </SelectItem>

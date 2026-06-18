@@ -32,7 +32,8 @@ import { collectLeadEmailSuggestions } from "@/lib/lead-email-suggestions";
 import { ListingProfileLink, ListingSearchOrigin } from "@/components/ListingSourceLinks";
 import { resolveBusinessSourceUrl, sourceLabelForBusiness } from "@/lib/listing-source";
 import { cn } from "@/lib/utils";
-import { CRM_LEAD_STATUSES, CRM_LEAD_STATUS_LABEL } from "@/lib/crm-statuses";
+import { pipelineStatusLabel } from "@/lib/crm-statuses";
+import type { CrmPipelineColumnRow } from "@/app/actions/crm-pipeline";
 import { CrmLeadTagsEditor, CrmLeadTagList } from "./CrmLeadTags";
 import {
   Building2,
@@ -49,12 +50,14 @@ export type LeadModalTab = "overview" | "conversation" | "notes";
 
 export function CrmLeadModal({
   lead,
+  columns,
   templates,
   open,
   onOpenChange,
   initialTab = "overview",
 }: {
   lead: CrmLeadRow | null;
+  columns: CrmPipelineColumnRow[];
   templates: EmailTemplateRow[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -174,7 +177,7 @@ export function CrmLeadModal({
               <DialogTitle className="truncate">{b.name}</DialogTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 {b.industry ?? "—"} · Lead score {b.leadScore ?? "—"} ·{" "}
-                {CRM_LEAD_STATUS_LABEL[status] ?? status}
+                {pipelineStatusLabel(columns, status)}
               </p>
               <CrmLeadTagList tags={lead.tags ?? []} className="mt-2" />
             </div>
@@ -183,7 +186,7 @@ export function CrmLeadModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {CRM_LEAD_STATUSES.map((opt) => (
+                {columns.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
                   </SelectItem>
