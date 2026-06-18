@@ -1,10 +1,12 @@
 "use server";
 
+import { lookupExecutiveEmailWithAi } from "@/lib/deepseek";
 import {
   buildResearchLinks,
   executiveEmailGuesses,
   extractDomain,
   fetchPageEmails,
+  isPlausibleBusinessEmail,
   resolveFetchUrl,
 } from "@/lib/email-research";
 
@@ -15,6 +17,53 @@ export type EmailResearchResult = {
   researchLinks: { label: string; href: string }[];
   pagesChecked: string[];
 };
+
+export type AiExecutiveEmailResult =
+  | {
+      success: true;
+      email: string;
+      personName: string | null;
+      confidence: string | null;
+      note: string | null;
+    }
+  | { success: false; error: string };
+
+export async function lookupExecutiveEmailAi(
+  companyName: string,
+  website: string | null | undefined,
+  role: "ceo" | "cto"
+): Promise<AiExecutiveEmailResult> {
+  const domain = extractDomain(website ?? null);
+  const result = await lookupExecutiveEmailWithAi({
+    companyName,
+    website,
+    domain,
+    role,
+  });
+
+  if (!result.ok) {
+    return { success: false, error: result.error };
+  }
+
+  if (!result.email) {
+    return {
+      success: false,
+      error: result.note ?? `AI could not find a ${role.toUpperCase()} email for this company.`,
+    };
+  }
+
+  if (!isPlausibleBusinessEmail(result.email, domain)) {
+    return { success: false, error: "AI returned an implausible email. Verify manually before sending." };
+  }
+
+  return {
+    success: true,
+    email: result.email,
+    personName: result.personName,
+    confidence: result.confidence,
+    note: result.note,
+  };
+}
 
 export async function researchLeadEmail(
   companyName: string,

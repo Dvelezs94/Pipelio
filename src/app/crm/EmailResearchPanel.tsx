@@ -2,8 +2,18 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { researchLeadEmail, type EmailResearchResult } from "@/app/actions/email-research";
-import { ExternalLink, Loader2, Search, UserSearch } from "lucide-react";
+import {
+  lookupExecutiveEmailAi,
+  researchLeadEmail,
+  type AiExecutiveEmailResult,
+  type EmailResearchResult,
+} from "@/app/actions/email-research";
+import { ExternalLink, Loader2, Search, Sparkles, UserSearch } from "lucide-react";
+
+type AiLookupState = {
+  ceo?: AiExecutiveEmailResult & { success: true };
+  cto?: AiExecutiveEmailResult & { success: true };
+};
 
 export function EmailResearchPanel({
   companyName,
@@ -15,8 +25,11 @@ export function EmailResearchPanel({
   onSelectEmail: (email: string) => void;
 }) {
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState<"ceo" | "cto" | null>(null);
   const [result, setResult] = useState<EmailResearchResult | null>(null);
+  const [aiResults, setAiResults] = useState<AiLookupState>({});
   const [error, setError] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   async function handleResearch() {
     if (!website?.trim()) {
@@ -35,6 +48,23 @@ export function EmailResearchPanel({
       setError("Research failed. Try the search links below.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleAiLookup(role: "ceo" | "cto") {
+    setAiLoading(role);
+    setAiError(null);
+    try {
+      const data = await lookupExecutiveEmailAi(companyName, website, role);
+      if (data.success) {
+        setAiResults((prev) => ({ ...prev, [role]: data }));
+      } else {
+        setAiError(data.error);
+      }
+    } catch {
+      setAiError("AI lookup failed. Check DEEPSEEK_API_KEY in .env.");
+    } finally {
+      setAiLoading(null);
     }
   }
 
@@ -139,7 +169,96 @@ export function EmailResearchPanel({
           </div>
         </div>
       )}
+
+      <div className="space-y-1.5">
+        <p className="text-xs font-medium text-muted-foreground">AI email lookup (DeepSeek)</p>
+        <div className="flex flex-wrap gap-1.5">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 h-8 text-xs"
+            onClick={() => void handleAiLookup("ceo")}
+            disabled={aiLoading !== null}
+          >
+            {aiLoading === "ceo" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+            AI: CEO email
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 h-8 text-xs"
+            onClick={() => void handleAiLookup("cto")}
+            disabled={aiLoading !== null}
+          >
+            {aiLoading === "cto" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+            AI: CTO email
+          </Button>
+        </div>
+        {aiError && <p className="text-xs text-destructive">{aiError}</p>}
+        {(aiResults.ceo || aiResults.cto) && (
+          <div className="flex flex-wrap gap-1.5">
+            {aiResults.ceo && (
+              <AiEmailChip
+                role="CEO"
+                result={aiResults.ceo}
+                onSelect={onSelectEmail}
+              />
+            )}
+            {aiResults.cto && (
+              <AiEmailChip
+                role="CTO"
+                result={aiResults.cto}
+                onSelect={onSelectEmail}
+              />
+            )}
+          </div>
+        )}
+        <p className="text-[11px] text-muted-foreground">
+          AI suggestions may be wrong — verify before sending.
+        </p>
+      </div>
     </div>
+  );
+}
+
+function AiEmailChip({
+  role,
+  result,
+  onSelect,
+}: {
+  role: string;
+  result: AiExecutiveEmailResult & { success: true };
+  onSelect: (email: string) => void;
+}) {
+  const title = [
+    result.personName,
+    result.confidence ? `${result.confidence} confidence` : null,
+    result.note,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(result.email)}
+      className="text-xs rounded-md border bg-card px-2 py-1 hover:bg-primary/10 hover:border-primary transition-colors text-left"
+      title={title || `Use ${result.email}`}
+    >
+      <span className="text-muted-foreground mr-1">AI {role}</span>
+      {result.personName && <span className="text-muted-foreground mr-1">{result.personName}</span>}
+      <span className="font-mono">{result.email}</span>
+    </button>
   );
 }
 

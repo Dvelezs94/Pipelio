@@ -431,3 +431,138 @@ ${trimmed}`;
   }
 }
 
+export type ExecutiveEmailLookupResult =
+  | {
+      ok: true;
+      email: string | null;
+      personName: string | null;
+      confidence: string | null;
+      note: string | null;
+    }
+  | { ok: false; error: string };
+
+const EXECUTIVE_ROLE_LABELS: Record<"ceo" | "cto", string> = {
+  ceo: "CEO (Chief Executive Officer)",
+  cto: "CTO (Chief Technology Officer)",
+};
+
+/**
+ * Ask the configured LLM (DeepSeek) for a likely work email for a company executive.
+ * Returns structured JSON; callers should validate the email before use.
+ */
+export async function lookupExecutiveEmailWithAi(params: {
+  companyName: string;
+  website?: string | null;
+  domain?: string | null;
+  role: "ceo" | "cto";
+}): Promise<ExecutiveEmailLookupResult> {
+  const key = getApiKey();
+  if (!key) {
+    return { ok: false, error: "DEEPSEEK_API_KEY is not set. Add it to .env to use AI email lookup." };
+  }
+
+  const roleLabel = EXECUTIVE_ROLE_LABELS[params.role];
+  const company = params.companyName.trim();
+  if (!company) {
+    return { ok: false, error: "Company name is required." };
+  }
+
+  const contextLines = [
+    `Company: ${company}`,
+    params.website?.trim() ? `Website: ${params.website.trim()}` : null,
+    params.domain?.trim() ? `Email domain (if known): ${params.domain.trim()}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const prompt = `You help with B2B lead research. Find the most likely professional work email for the ${roleLabel} at this company.
+
+${contextLines}
+
+Rules:
+- Prefer emails on the company's own domain when a website/domain is known.
+- Use common corporate patterns (firstname@, first.last@, role@) only when that matches how this company likely formats addresses.
+- If you know the executive's name from public information, use it in the email pattern.
+- Do NOT invent generic placeholders like ceo@company.com unless that is a known public contact for this specific company.
+- If you cannot determine a specific email with reasonable confidence, set email to null and explain in note.
+
+Respond with ONLY valid JSON (no markdown):
+{"email":"name@domain.com or null","personName":"Full name or null","confidence":"high|medium|low","note":"Brief source or reasoning"}`;
+
+  try {
+    const res = await fetch(`${DEEPSEEK_BASE}/v1/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.2,
+        max_tokens: 256,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      return {
+        ok: false,
+        error: `DeepSeek API error (${res.status}): ${err.slice(0, 200)}`,
+      };
+    }
+
+    const data = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const content = data.choices?.[0]?.message?.content?.trim();
+    if (!content) {
+      return { ok: false, error: "Empty response from DeepSeek." };
+    }
+
+    const parsed = parseExecutiveEmailJson(content);
+    if (!parsed) {
+      return { ok: false, error: "Could not parse AI response. Try again." };
+    }
+
+    const email = parsed.email?.trim().toLowerCase() || null;
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return { ok: false, error: "AI returned an invalid email format." };
+    }
+
+    return {
+      ok: true,
+      email,
+      personName: parsed.personName?.trim() || null,
+      confidence: parsed.confidence?.trim() || null,
+      note: parsed.note?.trim() || null,
+    };
+  } catch (e) {
+    console.error("lookupExecutiveEmailWithAi", e);
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Failed to call DeepSeek.",
+    };
+  }
+}
+
+function parseExecutiveEmailJson(content: string): {
+  email?: string | null;
+  personName?: string | null;
+  confidence?: string | null;
+  note?: string | null;
+} | null {
+  const jsonMatch = content.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) return null;
+  try {
+    return JSON.parse(jsonMatch[0]) as {
+      email?: string | null;
+      personName?: string | null;
+      confidence?: string | null;
+      note?: string | null;
+    };
+  } catch {
+    return null;
+  }
+}
+
