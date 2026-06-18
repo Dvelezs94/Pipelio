@@ -5,17 +5,14 @@ import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { Logo } from "@/components/Logo";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { logout } from "@/app/actions/auth";
 import type { AuthUser } from "@/lib/auth";
-import { LogOut } from "lucide-react";
+import { NavigationProgress } from "@/components/NavigationProgress";
 
 const NAV_ITEMS = [
   { href: "/", label: "Search", match: (path: string) => path === "/" || path.startsWith("/results") },
   { href: "/db", label: "Database", match: (path: string) => path.startsWith("/db") },
   { href: "/crm", label: "CRM", match: (path: string) => path.startsWith("/crm") },
-  { href: "/settings", label: "Settings", match: (path: string) => path.startsWith("/settings") },
 ] as const;
 
 const AUTH_PATHS = ["/login", "/register"];
@@ -34,7 +31,8 @@ export function NavBar({ user }: { user: AuthUser | null }) {
   const isAuthPage = AUTH_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   return (
-    <nav className="border-b bg-card px-4 py-2">
+    <nav className="relative border-b bg-card px-4 py-2">
+      <NavigationProgress />
       <div className="container mx-auto flex items-center gap-2">
         <Logo href={user ? "/" : "/login"} size="sm" className="mr-1" />
         {!isAuthPage && user && <WorkspaceSwitcher />}
@@ -53,23 +51,18 @@ export function NavBar({ user }: { user: AuthUser | null }) {
         </div>
         <div className="flex items-center gap-2">
           {user && !isAuthPage && (
-            <>
-              <Link
-                href="/settings"
-                className={cn(
-                  "text-sm text-muted-foreground hidden sm:inline hover:text-foreground transition-colors",
-                  pathname.startsWith("/settings") && "text-foreground"
-                )}
-              >
-                {user.name}
-              </Link>
-              <form action={logout}>
-                <Button type="submit" variant="ghost" size="sm" className="gap-1.5">
-                  <LogOut className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sign out</span>
-                </Button>
-              </form>
-            </>
+            <Link
+              href="/settings"
+              className={cn(
+                "text-sm rounded-md px-2.5 py-1 transition-colors",
+                pathname.startsWith("/settings")
+                  ? "font-medium text-foreground bg-muted"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              )}
+              aria-current={pathname.startsWith("/settings") ? "page" : undefined}
+            >
+              {user.name}
+            </Link>
           )}
           <ThemeToggle />
         </div>

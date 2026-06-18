@@ -26,6 +26,8 @@ import { getSmtpConfigStatus } from "@/app/actions/smtp-config";
 import type { EmailTemplateRow } from "@/app/actions/email-templates";
 import type { CrmLeadRow } from "./CrmLeadsTable";
 import { AiTextField } from "@/components/AiTextField";
+import { EmailSuggestionChips } from "@/components/EmailSuggestionChips";
+import { collectLeadEmailSuggestions } from "@/lib/lead-email-suggestions";
 import { cn } from "@/lib/utils";
 import { Loader2, Send, Sparkles, AlertTriangle } from "lucide-react";
 
@@ -123,6 +125,17 @@ export function CrmLeadConversationPanel({
   useEffect(() => {
     setRecipient(contactEmail);
   }, [contactEmail]);
+
+  const emailSuggestions = useMemo(
+    () =>
+      collectLeadEmailSuggestions({
+        contactEmail: lead.contactEmail,
+        businessEmail: lead.business.email,
+        sentRecipients: emails.map((e) => e.recipient),
+        inboxFromEmails: inbox.map((m) => ({ email: m.fromEmail, name: m.fromName })),
+      }),
+    [lead.contactEmail, lead.business.email, emails, inbox]
+  );
 
   const thread = useMemo<ThreadItem[]>(() => {
     const items: ThreadItem[] = [
@@ -360,14 +373,28 @@ export function CrmLeadConversationPanel({
             </p>
           </div>
         )}
-        <div className="flex flex-wrap items-center gap-2">
-          <Input
-            value={recipient}
-            onChange={(e) => setRecipient(e.target.value)}
-            placeholder="To: email@company.com"
-            type="email"
-            className="h-8 text-xs flex-1 min-w-[140px] border-0 bg-muted text-foreground placeholder:text-muted-foreground focus-visible:ring-1"
-          />
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="flex-1 min-w-[140px] space-y-1">
+            <Input
+              value={recipient}
+              onChange={(e) => setRecipient(e.target.value)}
+              placeholder="To: email@company.com"
+              type="email"
+              list="crm-recipient-suggestions"
+              className="h-8 text-xs w-full border-0 bg-muted text-foreground placeholder:text-muted-foreground focus-visible:ring-1"
+            />
+            <datalist id="crm-recipient-suggestions">
+              {emailSuggestions.map((s) => (
+                <option key={s.email} value={s.email} label={s.label} />
+              ))}
+            </datalist>
+            <EmailSuggestionChips
+              suggestions={emailSuggestions}
+              value={recipient}
+              onSelect={setRecipient}
+              compact
+            />
+          </div>
           <Select value={selectedTemplateId || "_none"} onValueChange={(v) => handleTemplateChange(v === "_none" ? "" : v)}>
             <SelectTrigger className="h-8 w-auto min-w-[120px] max-w-[260px] text-xs border-0 bg-muted">
               <SelectValue placeholder="Template…" />

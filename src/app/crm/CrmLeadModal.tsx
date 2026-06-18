@@ -27,6 +27,8 @@ import { EmailResearchPanel } from "./EmailResearchPanel";
 import type { CrmLeadRow } from "./CrmLeadsTable";
 import type { EmailTemplateRow } from "@/app/actions/email-templates";
 import { AiTextField } from "@/components/AiTextField";
+import { EmailSuggestionChips } from "@/components/EmailSuggestionChips";
+import { collectLeadEmailSuggestions } from "@/lib/lead-email-suggestions";
 import { ListingProfileLink, ListingSearchOrigin } from "@/components/ListingSourceLinks";
 import { resolveBusinessSourceUrl, sourceLabelForBusiness } from "@/lib/listing-source";
 import { cn } from "@/lib/utils";
@@ -107,6 +109,10 @@ export function CrmLeadModal({
 
   const b = lead.business;
   const noteCount = lead.noteList?.length ?? 0;
+  const contactEmailSuggestions = collectLeadEmailSuggestions({
+    contactEmail: lead.contactEmail,
+    businessEmail: b.email,
+  });
 
   async function handleStatusChange(value: string) {
     setStatus(value);
@@ -214,13 +220,20 @@ export function CrmLeadModal({
               <section className="space-y-3">
                 <h4 className="text-xs font-semibold uppercase text-muted-foreground">Contact</h4>
                 <div className="flex gap-2">
-                  <AiTextField
-                    value={contactEmail}
-                    onChange={setContactEmail}
-                    context="B2B lead contact email address"
-                    placeholder="contact@company.com"
-                    className="flex-1"
-                  />
+                  <div className="flex-1 space-y-1">
+                    <AiTextField
+                      value={contactEmail}
+                      onChange={setContactEmail}
+                      context="B2B lead contact email address"
+                      placeholder="contact@company.com"
+                      className="w-full"
+                    />
+                    <EmailSuggestionChips
+                      suggestions={contactEmailSuggestions}
+                      value={contactEmail}
+                      onSelect={setContactEmail}
+                    />
+                  </div>
                   <Button type="button" variant="outline" size="sm" onClick={handleSaveContactEmail} disabled={savingEmail}>
                     {savingEmail ? "Saving..." : "Save email"}
                   </Button>

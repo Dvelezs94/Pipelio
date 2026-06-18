@@ -10,7 +10,8 @@ import {
   updateUserProfile,
   type UserSettings,
 } from "@/app/actions/user-settings";
-import { KeyRound, Loader2, User } from "lucide-react";
+import { KeyRound, Loader2, LogOut, User } from "lucide-react";
+import { logout } from "@/app/actions/auth";
 
 export function UserSettingsForm({
   user,
@@ -183,6 +184,23 @@ export function UserSettingsForm({
             )}
             <Button type="submit" disabled={savingPassword}>
               {savingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : "Change password"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <LogOut className="h-5 w-5" />
+            Sign out
+          </CardTitle>
+          <CardDescription>End your session on this device.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={logout}>
+            <Button type="submit" variant="outline">
+              Sign out
             </Button>
           </form>
         </CardContent>
