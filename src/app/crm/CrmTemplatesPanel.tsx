@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +18,11 @@ import {
   type EmailTemplateRow,
 } from "@/app/actions/email-templates";
 import { AiTextField } from "@/components/AiTextField";
-import { TemplateVariableField } from "@/components/TemplateVariableField";
+import {
+  TemplateVariableBar,
+  TemplateVariableField,
+  type TemplateVariableFieldRef,
+} from "@/components/TemplateVariableField";
 import { invalidTemplatePlaceholders } from "@/lib/email-templates";
 import { cn } from "@/lib/utils";
 import { FileText, Plus, Trash2 } from "lucide-react";
@@ -35,6 +39,9 @@ export function CrmTemplatesPanel({ templates }: { templates: EmailTemplateRow[]
   const [subjectTemplate, setSubjectTemplate] = useState("");
   const [bodyTemplate, setBodyTemplate] = useState("");
   const [saving, setSaving] = useState(false);
+  const [activeField, setActiveField] = useState<"subject" | "body">("body");
+  const subjectFieldRef = useRef<TemplateVariableFieldRef>(null);
+  const bodyFieldRef = useRef<TemplateVariableFieldRef>(null);
 
   const showEditor = isNew || editing !== null;
 
@@ -205,10 +212,23 @@ export function CrmTemplatesPanel({ templates }: { templates: EmailTemplateRow[]
                 </Select>
               </div>
               <div className="sm:col-span-2">
+                <TemplateVariableBar
+                  onInsert={(key) => {
+                    const target =
+                      activeField === "subject" ? subjectFieldRef.current : bodyFieldRef.current;
+                    target?.insertVariable(key);
+                    target?.focus();
+                  }}
+                  disabled={saving}
+                />
+              </div>
+              <div className="sm:col-span-2">
                 <label className="text-sm font-medium text-muted-foreground block mb-1">Subject template</label>
                 <TemplateVariableField
+                  ref={subjectFieldRef}
                   value={subjectTemplate}
                   onChange={setSubjectTemplate}
+                  onFocus={() => setActiveField("subject")}
                   aiContext="cold email subject template with placeholders"
                   placeholder="Subject with {{businessName}}"
                 />
@@ -216,8 +236,10 @@ export function CrmTemplatesPanel({ templates }: { templates: EmailTemplateRow[]
               <div className="sm:col-span-2">
                 <label className="text-sm font-medium text-muted-foreground block mb-1">Body template</label>
                 <TemplateVariableField
+                  ref={bodyFieldRef}
                   value={bodyTemplate}
                   onChange={setBodyTemplate}
+                  onFocus={() => setActiveField("body")}
                   aiContext="cold email body template with placeholders"
                   placeholder="Hi {{businessName}} team..."
                   multiline
