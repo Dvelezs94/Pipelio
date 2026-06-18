@@ -25,38 +25,20 @@ export async function getUserSettings(): Promise<UserSettings> {
 
 const profileSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters."),
-  email: z.string().email("Enter a valid email address."),
 });
 
-export async function updateUserProfile(
-  name: string,
-  email: string
-): Promise<UserSettingsResult> {
-  const parsed = profileSchema.safeParse({ name, email });
+export async function updateUserProfile(name: string): Promise<UserSettingsResult> {
+  const parsed = profileSchema.safeParse({ name });
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
   const user = await requireUser();
-  const normalizedEmail = parsed.data.email.toLowerCase();
-
-  if (normalizedEmail !== user.email) {
-    const existing = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-      select: { id: true },
-    });
-    if (existing) {
-      return { success: false, error: "An account with this email already exists." };
-    }
-  }
 
   try {
     await prisma.user.update({
       where: { id: user.id },
-      data: {
-        name: parsed.data.name,
-        email: normalizedEmail,
-      },
+      data: { name: parsed.data.name },
     });
     revalidatePath("/settings");
     return { success: true };

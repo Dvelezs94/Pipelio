@@ -19,7 +19,6 @@ export function UserSettingsForm({
 }) {
   const router = useRouter();
   const [name, setName] = useState(user.name);
-  const [email, setEmail] = useState(user.email);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileSuccess, setProfileSuccess] = useState(false);
@@ -37,7 +36,7 @@ export function UserSettingsForm({
     setProfileSuccess(false);
     setSavingProfile(true);
     try {
-      const result = await updateUserProfile(name, email);
+      const result = await updateUserProfile(name);
       if (!result.success) {
         setProfileError(result.error);
         return;
@@ -78,7 +77,7 @@ export function UserSettingsForm({
             Profile
           </CardTitle>
           <CardDescription>
-            Update your name and email. Member since{" "}
+            Update your display name. Member since{" "}
             {new Date(user.createdAt).toLocaleDateString()}.
           </CardDescription>
         </CardHeader>
@@ -104,10 +103,9 @@ export function UserSettingsForm({
               <Input
                 id="settings-email"
                 type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                value={user.email}
+                readOnly
+                className="bg-muted text-muted-foreground cursor-not-allowed"
               />
             </div>
             {profileError && <p className="text-sm text-destructive">{profileError}</p>}
