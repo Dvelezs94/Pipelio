@@ -104,6 +104,7 @@ model CrmLead {
   notes        String?   // legacy single note; prefer CrmNote for multiple
   contactEmail String?   // recipient override for outbound email
   inboxLastReadAt DateTime? // last time user viewed conversation (for unread inbox badge)
+  tags         String[]  @default([])
   createdAt    DateTime  @default(now())
   emails       CrmEmail[]
   noteList     CrmNote[] @relation("LeadNotes")

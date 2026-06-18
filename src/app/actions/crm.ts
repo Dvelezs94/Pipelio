@@ -136,10 +136,10 @@ export async function removeFromCrm(businessId: string): Promise<CrmActionResult
   }
 }
 
-/** Update lead status or notes. */
+/** Update lead status, notes, or tags. */
 export async function updateCrmLead(
   businessId: string,
-  data: { status?: string; notes?: string | null }
+  data: { status?: string; notes?: string | null; tags?: string[] }
 ): Promise<CrmActionResult> {
   try {
     await prisma.crmLead.updateMany({
@@ -147,6 +147,7 @@ export async function updateCrmLead(
       data: {
         ...(data.status != null && { status: data.status }),
         ...(data.notes !== undefined && { notes: data.notes }),
+        ...(data.tags !== undefined && { tags: normalizeCrmLeadTags(data.tags) }),
       },
     });
     revalidatePath("/crm");
@@ -155,6 +156,29 @@ export async function updateCrmLead(
     console.error("updateCrmLead", e);
     return { success: false, error: "Failed to update lead." };
   }
+}
+
+function normalizeCrmLeadTags(tags: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const tag of tags) {
+    const trimmed = tag.trim();
+    if (!trimmed || trimmed.length > 50) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(trimmed);
+    if (result.length >= 20) break;
+  }
+  return result;
+}
+
+/** Replace all tags on a CRM lead. */
+export async function updateCrmLeadTags(
+  businessId: string,
+  tags: string[]
+): Promise<CrmActionResult> {
+  return updateCrmLead(businessId, { tags });
 }
 
 /** List business IDs that are in the CRM (for button state). */
@@ -180,6 +204,7 @@ export type CrmLeadWithBusiness = {
   sortOrder: number | null;
   notes: string | null;
   contactEmail: string | null;
+  tags: string[];
   createdAt: Date;
   business: {
     id: string;

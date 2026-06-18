@@ -31,6 +31,7 @@ import { ListingProfileLink, ListingSearchOrigin } from "@/components/ListingSou
 import { resolveBusinessSourceUrl, sourceLabelForBusiness } from "@/lib/listing-source";
 import { cn } from "@/lib/utils";
 import { CRM_LEAD_STATUSES, CRM_LEAD_STATUS_LABEL } from "@/lib/crm-statuses";
+import { CrmLeadTagsEditor, CrmLeadTagList } from "./CrmLeadTags";
 import {
   Building2,
   ExternalLink,
@@ -169,6 +170,7 @@ export function CrmLeadModal({
                 {b.industry ?? "—"} · Lead score {b.leadScore ?? "—"} ·{" "}
                 {CRM_LEAD_STATUS_LABEL[status] ?? status}
               </p>
+              <CrmLeadTagList tags={lead.tags ?? []} className="mt-2" />
             </div>
             <Select value={status} onValueChange={handleStatusChange}>
               <SelectTrigger className="w-[140px] h-9 shrink-0">
@@ -207,6 +209,8 @@ export function CrmLeadModal({
         <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
           {tab === "overview" && (
             <div className="space-y-6">
+              <CrmLeadTagsEditor businessId={lead.businessId} tags={lead.tags ?? []} />
+
               <section className="space-y-3">
                 <h4 className="text-xs font-semibold uppercase text-muted-foreground">Contact</h4>
                 <div className="flex gap-2">

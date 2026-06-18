@@ -10,6 +10,7 @@ import { GripVertical, Trash2, FileText, Mail } from "lucide-react";
 import { UnreadIndicator } from "./UnreadIndicator";
 import { CRM_LEAD_STATUSES } from "@/lib/crm-statuses";
 import { cn } from "@/lib/utils";
+import { CrmLeadTagList } from "./CrmLeadTags";
 
 const STATUS_COLUMNS = CRM_LEAD_STATUSES.map((s) => ({ id: s.value, label: s.label }));
 
@@ -61,6 +62,7 @@ function LeadCard({
           <p className="text-xs text-muted-foreground">
             {lead.business.industry ?? "—"} · Score {lead.business.leadScore ?? "—"}
           </p>
+          <CrmLeadTagList tags={lead.tags ?? []} className="mt-1.5" compact />
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">
               <button

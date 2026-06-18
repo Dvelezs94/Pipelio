@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "CrmLead" ADD COLUMN "tags" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];
