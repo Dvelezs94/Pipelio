@@ -260,120 +260,116 @@ export function ResultsDashboard({
         </div>
       )}
 
-      <main className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <aside className="lg:col-span-1">
-            <FiltersPanel
-              filters={filters}
-              onFiltersChange={setFilters}
-              onReset={() => setFilters(DEFAULT_FILTERS)}
-            />
-          </aside>
+      <main className="container mx-auto px-4 py-6 space-y-6">
+        <FiltersPanel
+          filters={filters}
+          onFiltersChange={setFilters}
+          onReset={() => setFilters(DEFAULT_FILTERS)}
+        />
 
-          <div className="lg:col-span-3 space-y-6">
-            <div className="flex gap-2">
-              <Button
-                variant={view === "table" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setView("table")}
-              >
-                <Table className="h-4 w-4 mr-1" />
-                Table
-              </Button>
-              <Button
-                variant={view === "accordion" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setView("accordion")}
-              >
-                <LayoutList className="h-4 w-4 mr-1" />
-                By industry
-              </Button>
-              {hasMapData && mapApiKey && (
-                <Button
-                  variant={view === "map" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setView("map")}
-                >
-                  <Map className="h-4 w-4 mr-1" />
-                  Map
-                </Button>
-              )}
-            </div>
-
-            {view === "table" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Businesses</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <BusinessTable
-                    businesses={filtered}
-                    searchPlaceholder="Search in results..."
-                    savedToCrmIds={initialCrmLeadIds}
-                    searchId={searchId}
-                    onCrmChange={() => router.refresh()}
-                    onDismissChange={() => router.refresh()}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {view === "accordion" && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>By industry & size</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <IndustryAccordion
-                    businesses={filtered}
-                    renderBusiness={(b) => (
-                      <div
-                        className={cn(
-                          "flex items-center justify-between gap-2 py-1 px-2 rounded-md border-l-[3px]",
-                          visitedItemClasses(isVisited(b.id), isLastVisited(b.id)),
-                          b.dismissedAt && "opacity-60 bg-muted/40 text-muted-foreground"
-                        )}
-                      >
-                        <span>{b.name}</span>
-                        <div className="flex items-center gap-3 shrink-0">
-                          <ListingProfileLink business={b} />
-                          {b.website && (
-                            <a
-                              href={b.website}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary text-sm hover:underline"
-                              onPointerDown={() => markVisited(b.id)}
-                            >
-                              Website
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
-            {view === "map" && hasMapData && mapApiKey && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Map</CardTitle>
-                  <CardDescription>Click a marker for details</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <MapView
-                    businesses={filtered}
-                    center={center}
-                    apiKey={mapApiKey}
-                    className="rounded-md overflow-hidden"
-                  />
-                </CardContent>
-              </Card>
-            )}
-          </div>
+        <div className="flex gap-2">
+          <Button
+            variant={view === "table" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("table")}
+          >
+            <Table className="h-4 w-4 mr-1" />
+            Table
+          </Button>
+          <Button
+            variant={view === "accordion" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("accordion")}
+          >
+            <LayoutList className="h-4 w-4 mr-1" />
+            By industry
+          </Button>
+          {hasMapData && mapApiKey && (
+            <Button
+              variant={view === "map" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setView("map")}
+            >
+              <Map className="h-4 w-4 mr-1" />
+              Map
+            </Button>
+          )}
         </div>
+
+        {view === "table" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Businesses</CardTitle>
+              <CardDescription>{filtered.length} matching</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <BusinessTable
+                businesses={filtered}
+                searchPlaceholder="Search in results..."
+                savedToCrmIds={initialCrmLeadIds}
+                searchId={searchId}
+                onCrmChange={() => router.refresh()}
+                onDismissChange={() => router.refresh()}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {view === "accordion" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>By industry & size</CardTitle>
+              <CardDescription>{filtered.length} matching</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <IndustryAccordion
+                businesses={filtered}
+                renderBusiness={(b) => (
+                  <div
+                    className={cn(
+                      "flex items-center justify-between gap-2 py-1 px-2 rounded-md border-l-[3px]",
+                      visitedItemClasses(isVisited(b.id), isLastVisited(b.id)),
+                      b.dismissedAt && "opacity-60 bg-muted/40 text-muted-foreground"
+                    )}
+                  >
+                    <span>{b.name}</span>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <ListingProfileLink business={b} />
+                      {b.website && (
+                        <a
+                          href={b.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary text-sm hover:underline"
+                          onPointerDown={() => markVisited(b.id)}
+                        >
+                          Website
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {view === "map" && hasMapData && mapApiKey && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Map</CardTitle>
+              <CardDescription>Click a marker for details</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <MapView
+                businesses={filtered}
+                center={center}
+                apiKey={mapApiKey}
+                className="rounded-md overflow-hidden"
+              />
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );

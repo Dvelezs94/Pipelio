@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { href: "/", label: "Search", match: (path: string) => path === "/" || path.startsWith("/results") },
   { href: "/db", label: "Database", match: (path: string) => path.startsWith("/db") },
   { href: "/crm", label: "CRM", match: (path: string) => path.startsWith("/crm") },
-  { href: "/settings/extension", label: "Extension", match: (path: string) => path.startsWith("/settings") },
+  { href: "/settings", label: "Settings", match: (path: string) => path.startsWith("/settings") },
 ] as const;
 
 const AUTH_PATHS = ["/login", "/register"];
@@ -54,7 +54,15 @@ export function NavBar({ user }: { user: AuthUser | null }) {
         <div className="flex items-center gap-2">
           {user && !isAuthPage && (
             <>
-              <span className="text-sm text-muted-foreground hidden sm:inline">{user.name}</span>
+              <Link
+                href="/settings"
+                className={cn(
+                  "text-sm text-muted-foreground hidden sm:inline hover:text-foreground transition-colors",
+                  pathname.startsWith("/settings") && "text-foreground"
+                )}
+              >
+                {user.name}
+              </Link>
               <form action={logout}>
                 <Button type="submit" variant="ghost" size="sm" className="gap-1.5">
                   <LogOut className="h-4 w-4" />
