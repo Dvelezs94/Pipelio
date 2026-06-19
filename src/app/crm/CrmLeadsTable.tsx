@@ -14,12 +14,14 @@ import type { LeadModalTab } from "./CrmLeadModal";
 import { ExternalLink, Phone, Linkedin, Trash2, Mail } from "lucide-react";
 import { ListingProfileLink } from "@/components/ListingSourceLinks";
 import { UnreadIndicator } from "./UnreadIndicator";
+import { CrmLastMessageAge } from "./CrmLastMessageAge";
 import { useRouter } from "next/navigation";
 import type { CrmPipelineColumnRow } from "@/app/actions/crm-pipeline";
 
 /** Serializable shape when passed from server (Date → string) */
-export type CrmLeadRow = Omit<CrmLeadWithBusiness, "createdAt" | "noteList"> & {
+export type CrmLeadRow = Omit<CrmLeadWithBusiness, "createdAt" | "noteList" | "lastMessageAt"> & {
   createdAt: string;
+  lastMessageAt: string | null;
   noteList: Array<{ id: string; content: string; createdAt: string }>;
 };
 
@@ -80,12 +82,15 @@ export function CrmLeadsTable({
               onClick={() => onOpenLead(lead)}
             >
               <td className="p-3 font-medium">
-                <span className="inline-flex items-center gap-1.5">
-                  {lead.business.name}
-                  {(lead.unreadInboxCount ?? 0) > 0 && (
-                    <UnreadIndicator count={lead.unreadInboxCount} compact />
-                  )}
-                </span>
+                <div className="flex flex-col gap-0.5">
+                  <span className="inline-flex items-center gap-1.5">
+                    {lead.business.name}
+                    {(lead.unreadInboxCount ?? 0) > 0 && (
+                      <UnreadIndicator count={lead.unreadInboxCount} compact />
+                    )}
+                  </span>
+                  <CrmLastMessageAge lastMessageAt={lead.lastMessageAt} />
+                </div>
               </td>
               <td className="p-3 text-muted-foreground">{lead.business.industry ?? "—"}</td>
               <td className="p-3" onClick={(e) => e.stopPropagation()}>

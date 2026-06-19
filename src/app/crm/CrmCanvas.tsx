@@ -11,6 +11,7 @@ import { UnreadIndicator } from "./UnreadIndicator";
 import { cn } from "@/lib/utils";
 import { sortCrmLeadsInColumn } from "@/lib/crm-lead-sort";
 import { CrmLeadTagList } from "./CrmLeadTags";
+import { CrmLastMessageAge } from "./CrmLastMessageAge";
 import type { CrmPipelineColumnRow } from "@/app/actions/crm-pipeline";
 
 type PipelineColumn = Pick<CrmPipelineColumnRow, "value" | "label">;
@@ -65,6 +66,7 @@ function LeadCard({
           <p className="text-xs text-muted-foreground">
             {lead.business.industry ?? "—"} · Score {lead.business.leadScore ?? "—"}
           </p>
+          <CrmLastMessageAge lastMessageAt={lead.lastMessageAt} className="mt-1" />
           <CrmLeadTagList tags={lead.tags ?? []} className="mt-1.5" compact />
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">

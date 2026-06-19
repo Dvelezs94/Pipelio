@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { getWorkspacePipelineStatusValues } from "@/app/actions/crm-pipeline";
+import { lastMessageAtFromActivity } from "@/lib/crm-last-message";
 import { sortCrmLeadsForTable } from "@/lib/crm-lead-sort";
 import { ensureManualZipSearch, manualZipSearchId, requireWorkspaceId } from "@/lib/workspace";
 
@@ -256,6 +257,7 @@ export type CrmLeadWithBusiness = {
   };
   noteList: CrmNoteRecord[];
   unreadInboxCount: number;
+  lastMessageAt: Date | null;
 };
 
 /** List all CRM leads with business details and notes for the CRM page. Ordered by status, then sortOrder (nulls last), then createdAt. */
@@ -294,11 +296,18 @@ export async function getCrmLeads(): Promise<CrmLeadWithBusiness[]> {
         select: { id: true, content: true, createdAt: true },
       },
       inbox: { select: { receivedAt: true } },
+      emails: {
+        where: { sentAt: { not: null } },
+        orderBy: { sentAt: "desc" },
+        take: 1,
+        select: { sentAt: true },
+      },
     },
   });
-  const typed = leads.map(({ inbox, inboxLastReadAt, ...lead }) => ({
+  const typed = leads.map(({ inbox, emails, inboxLastReadAt, ...lead }) => ({
     ...lead,
     unreadInboxCount: countUnreadInbox(inbox, inboxLastReadAt),
+    lastMessageAt: lastMessageAtFromActivity(inbox, emails[0] ?? null),
   })) as CrmLeadWithBusiness[];
   return sortCrmLeadsForTable(typed);
 }

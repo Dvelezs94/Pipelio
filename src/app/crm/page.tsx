@@ -22,6 +22,7 @@ export default async function CrmPage() {
   const serialized: CrmLeadRow[] = leads.map((l) => ({
     ...l,
     createdAt: l.createdAt.toISOString(),
+    lastMessageAt: l.lastMessageAt?.toISOString() ?? null,
     noteList: (l.noteList ?? []).map((n) => ({
       ...n,
       createdAt: n.createdAt.toISOString(),
