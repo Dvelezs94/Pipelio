@@ -26,7 +26,7 @@ export type AiExecutiveEmailResult =
       confidence: string | null;
       note: string | null;
     }
-  | { success: false; error: string };
+  | { success: false; error: string; debug?: string };
 
 export async function lookupExecutiveEmailAi(
   companyName: string,
@@ -42,7 +42,7 @@ export async function lookupExecutiveEmailAi(
   });
 
   if (!result.ok) {
-    return { success: false, error: result.error };
+    return { success: false, error: result.error, debug: result.debug };
   }
 
   if (!result.email) {

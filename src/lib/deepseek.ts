@@ -439,7 +439,7 @@ export type ExecutiveEmailLookupResult =
       confidence: string | null;
       note: string | null;
     }
-  | { ok: false; error: string };
+  | { ok: false; error: string; debug?: string };
 
 const EXECUTIVE_ROLE_LABELS: Record<"ceo" | "cto", string> = {
   ceo: "CEO (Chief Executive Officer)",
@@ -522,12 +522,16 @@ Respond with ONLY valid JSON (no markdown):
 
     const parsed = parseExecutiveEmailJson(content);
     if (!parsed) {
-      return { ok: false, error: "Could not parse AI response. Try again." };
+      return { ok: false, error: "Could not parse AI response. Try again.", debug: content };
     }
 
     const email = parsed.email?.trim().toLowerCase() || null;
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return { ok: false, error: "AI returned an invalid email format." };
+      return {
+        ok: false,
+        error: "AI returned an invalid email format.",
+        debug: content,
+      };
     }
 
     return {

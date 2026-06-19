@@ -29,7 +29,7 @@ export function EmailResearchPanel({
   const [result, setResult] = useState<EmailResearchResult | null>(null);
   const [aiResults, setAiResults] = useState<AiLookupState>({});
   const [error, setError] = useState<string | null>(null);
-  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<{ message: string; debug?: string } | null>(null);
 
   async function handleResearch() {
     if (!website?.trim()) {
@@ -59,10 +59,10 @@ export function EmailResearchPanel({
       if (data.success) {
         setAiResults((prev) => ({ ...prev, [role]: data }));
       } else {
-        setAiError(data.error);
+        setAiError({ message: data.error, debug: data.debug });
       }
     } catch {
-      setAiError("AI lookup failed. Check DEEPSEEK_API_KEY in .env.");
+      setAiError({ message: "AI lookup failed. Check DEEPSEEK_API_KEY in .env." });
     } finally {
       setAiLoading(null);
     }
@@ -204,7 +204,16 @@ export function EmailResearchPanel({
             AI: CTO email
           </Button>
         </div>
-        {aiError && <p className="text-xs text-destructive">{aiError}</p>}
+        {aiError && (
+          <div className="space-y-1.5">
+            <p className="text-xs text-destructive">{aiError.message}</p>
+            {aiError.debug && (
+              <pre className="text-[11px] font-mono text-muted-foreground whitespace-pre-wrap break-all rounded border bg-muted/40 p-2 max-h-36 overflow-y-auto">
+                {aiError.debug}
+              </pre>
+            )}
+          </div>
+        )}
         {(aiResults.ceo || aiResults.cto) && (
           <div className="flex flex-wrap gap-1.5">
             {aiResults.ceo && (
