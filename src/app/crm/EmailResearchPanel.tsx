@@ -29,7 +29,7 @@ export function EmailResearchPanel({
   const [result, setResult] = useState<EmailResearchResult | null>(null);
   const [aiResults, setAiResults] = useState<AiLookupState>({});
   const [error, setError] = useState<string | null>(null);
-  const [aiError, setAiError] = useState<{ message: string; debug?: string } | null>(null);
+  const [aiError, setAiError] = useState<{ message: string; rawResponse: string | null } | null>(null);
 
   async function handleResearch() {
     if (!website?.trim()) {
@@ -59,10 +59,10 @@ export function EmailResearchPanel({
       if (data.success) {
         setAiResults((prev) => ({ ...prev, [role]: data }));
       } else {
-        setAiError({ message: data.error, debug: data.debug });
+        setAiError({ message: data.error, rawResponse: data.rawResponse });
       }
     } catch {
-      setAiError({ message: "AI lookup failed. Check DEEPSEEK_API_KEY in .env." });
+      setAiError({ message: "AI lookup failed. Check DEEPSEEK_API_KEY in .env.", rawResponse: null });
     } finally {
       setAiLoading(null);
     }
@@ -205,12 +205,15 @@ export function EmailResearchPanel({
           </Button>
         </div>
         {aiError && (
-          <div className="space-y-1.5">
-            <p className="text-xs text-destructive">{aiError.message}</p>
-            {aiError.debug && (
-              <pre className="text-[11px] font-mono text-muted-foreground whitespace-pre-wrap break-all rounded border bg-muted/40 p-2 max-h-36 overflow-y-auto">
-                {aiError.debug}
-              </pre>
+          <div className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 p-2.5">
+            <p className="text-xs font-medium text-destructive">{aiError.message}</p>
+            {aiError.rawResponse && (
+              <div className="space-y-1">
+                <p className="text-[11px] font-medium text-foreground">Raw AI response</p>
+                <pre className="text-[11px] font-mono text-foreground whitespace-pre-wrap break-all rounded border bg-background p-2 max-h-44 overflow-y-auto">
+                  {aiError.rawResponse}
+                </pre>
+              </div>
             )}
           </div>
         )}

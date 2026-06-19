@@ -26,7 +26,7 @@ export type AiExecutiveEmailResult =
       confidence: string | null;
       note: string | null;
     }
-  | { success: false; error: string; debug?: string };
+  | { success: false; error: string; rawResponse: string | null };
 
 export async function lookupExecutiveEmailAi(
   companyName: string,
@@ -42,18 +42,23 @@ export async function lookupExecutiveEmailAi(
   });
 
   if (!result.ok) {
-    return { success: false, error: result.error, debug: result.debug };
+    return { success: false, error: result.error, rawResponse: result.rawResponse };
   }
 
   if (!result.email) {
     return {
       success: false,
       error: result.note ?? `AI could not find a ${role.toUpperCase()} email for this company.`,
+      rawResponse: result.rawResponse,
     };
   }
 
   if (!isPlausibleBusinessEmail(result.email, domain)) {
-    return { success: false, error: "AI returned an implausible email. Verify manually before sending." };
+    return {
+      success: false,
+      error: "AI returned an implausible email. Verify manually before sending.",
+      rawResponse: result.rawResponse,
+    };
   }
 
   return {

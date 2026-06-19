@@ -438,8 +438,9 @@ export type ExecutiveEmailLookupResult =
       personName: string | null;
       confidence: string | null;
       note: string | null;
+      rawResponse: string;
     }
-  | { ok: false; error: string; debug?: string };
+  | { ok: false; error: string; rawResponse: string | null };
 
 const EXECUTIVE_ROLE_LABELS: Record<"ceo" | "cto", string> = {
   ceo: "CEO (Chief Executive Officer)",
@@ -458,13 +459,13 @@ export async function lookupExecutiveEmailWithAi(params: {
 }): Promise<ExecutiveEmailLookupResult> {
   const key = getApiKey();
   if (!key) {
-    return { ok: false, error: "DEEPSEEK_API_KEY is not set. Add it to .env to use AI email lookup." };
+    return { ok: false, error: "DEEPSEEK_API_KEY is not set. Add it to .env to use AI email lookup.", rawResponse: null };
   }
 
   const roleLabel = EXECUTIVE_ROLE_LABELS[params.role];
   const company = params.companyName.trim();
   if (!company) {
-    return { ok: false, error: "Company name is required." };
+    return { ok: false, error: "Company name is required.", rawResponse: null };
   }
 
   const contextLines = [
@@ -509,6 +510,7 @@ Respond with ONLY valid JSON (no markdown):
       return {
         ok: false,
         error: `DeepSeek API error (${res.status}): ${err.slice(0, 200)}`,
+        rawResponse: err || null,
       };
     }
 
@@ -517,12 +519,12 @@ Respond with ONLY valid JSON (no markdown):
     };
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) {
-      return { ok: false, error: "Empty response from DeepSeek." };
+      return { ok: false, error: "Empty response from DeepSeek.", rawResponse: null };
     }
 
     const parsed = parseExecutiveEmailJson(content);
     if (!parsed) {
-      return { ok: false, error: "Could not parse AI response. Try again.", debug: content };
+      return { ok: false, error: "Could not parse AI response. Try again.", rawResponse: content };
     }
 
     const email = parsed.email?.trim().toLowerCase() || null;
@@ -530,7 +532,7 @@ Respond with ONLY valid JSON (no markdown):
       return {
         ok: false,
         error: "AI returned an invalid email format.",
-        debug: content,
+        rawResponse: JSON.stringify({ raw: content, parsedEmail: parsed.email, parsed }, null, 2),
       };
     }
 
@@ -540,12 +542,14 @@ Respond with ONLY valid JSON (no markdown):
       personName: parsed.personName?.trim() || null,
       confidence: parsed.confidence?.trim() || null,
       note: parsed.note?.trim() || null,
+      rawResponse: content,
     };
   } catch (e) {
     console.error("lookupExecutiveEmailWithAi", e);
     return {
       ok: false,
       error: e instanceof Error ? e.message : "Failed to call DeepSeek.",
+      rawResponse: null,
     };
   }
 }
