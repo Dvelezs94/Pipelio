@@ -12,13 +12,27 @@ export function formatDaysSinceLastMessage(days: number): string {
   return `${days} days since last message`;
 }
 
-/** Text color gets warmer/redder as days since last message increase. */
-export function daysSinceLastMessageColorClass(days: number): string {
+export type DaysSinceLastMessageParts = {
+  prefix: string;
+  days: number | null;
+  suffix: string;
+};
+
+export function daysSinceLastMessageParts(days: number): DaysSinceLastMessageParts {
+  if (days === 0) return { prefix: "Last message today", days: null, suffix: "" };
+  if (days === 1) return { prefix: "", days: 1, suffix: " day since last message" };
+  return { prefix: "", days, suffix: " days since last message" };
+}
+
+/** Color for the day count only — redder as days increase; red after 5 days. */
+export function daysSinceLastMessageNumberColorClass(days: number): string {
   if (days <= 2) return "text-muted-foreground";
-  if (days <= 6) return "text-amber-600 dark:text-amber-500";
-  if (days <= 13) return "text-orange-600 dark:text-orange-500";
-  if (days <= 29) return "text-red-500 dark:text-red-400";
-  return "text-red-700 dark:text-red-500 font-medium";
+  if (days <= 3) return "text-amber-600 dark:text-amber-500";
+  if (days <= 4) return "text-orange-500 dark:text-orange-400";
+  if (days === 5) return "text-orange-600 dark:text-orange-500";
+  if (days <= 9) return "text-red-500 dark:text-red-400";
+  if (days <= 19) return "text-red-600 dark:text-red-500";
+  return "text-red-700 dark:text-red-500 font-semibold";
 }
 
 export function lastMessageAtFromActivity(
