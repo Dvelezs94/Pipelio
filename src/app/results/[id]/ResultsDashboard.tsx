@@ -249,12 +249,12 @@ export function ResultsDashboard({
       </header>
 
       {sourceWarnings && (
-        <div className="border-b border-amber-500/30 bg-amber-500/10 px-4 py-3">
-          <div className="container mx-auto flex gap-2 text-sm text-amber-950 dark:text-amber-100">
+        <div className="border-b border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-500/40 dark:bg-amber-950/50">
+          <div className="container mx-auto flex gap-2 text-sm text-amber-950 dark:text-amber-50">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
             <div className="min-w-0 whitespace-pre-wrap">
-              <p className="font-medium">Some data sources failed</p>
-              <p className="text-amber-900/80 dark:text-amber-100/80">{sourceWarnings}</p>
+              <p className="font-medium text-amber-950 dark:text-amber-50">Some data sources failed</p>
+              <p className="text-amber-800 dark:text-amber-100">{sourceWarnings}</p>
             </div>
           </div>
         </div>
