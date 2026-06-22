@@ -440,7 +440,7 @@ export type ExecutiveEmailLookupResult =
       note: string | null;
       rawResponse: string;
     }
-  | { ok: false; error: string; rawResponse: string | null };
+  | { ok: false; error: string; note?: string | null; rawResponse: string | null };
 
 const EXECUTIVE_ROLE_LABELS: Record<"ceo" | "cto", string> = {
   ceo: "CEO (Chief Executive Officer)",
@@ -527,11 +527,12 @@ Respond with ONLY valid JSON (no markdown):
       return { ok: false, error: "Could not parse AI response. Try again.", rawResponse: content };
     }
 
-    const email = parsed.email?.trim().toLowerCase() || null;
+    const email = normalizeAiNullableField(parsed.email)?.toLowerCase() ?? null;
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return {
         ok: false,
         error: "AI returned an invalid email format.",
+        note: parsed.note?.trim() || null,
         rawResponse: JSON.stringify({ raw: content, parsedEmail: parsed.email, parsed }, null, 2),
       };
     }
@@ -539,7 +540,7 @@ Respond with ONLY valid JSON (no markdown):
     return {
       ok: true,
       email,
-      personName: parsed.personName?.trim() || null,
+      personName: normalizeAiNullableField(parsed.personName),
       confidence: parsed.confidence?.trim() || null,
       note: parsed.note?.trim() || null,
       rawResponse: content,
@@ -552,6 +553,15 @@ Respond with ONLY valid JSON (no markdown):
       rawResponse: null,
     };
   }
+}
+
+function normalizeAiNullableField(value: string | null | undefined): string | null {
+  if (value == null) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const lower = trimmed.toLowerCase();
+  if (["null", "none", "n/a", "na", "unknown", "undefined"].includes(lower)) return null;
+  return trimmed;
 }
 
 function parseExecutiveEmailJson(content: string): {

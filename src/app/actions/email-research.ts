@@ -26,7 +26,7 @@ export type AiExecutiveEmailResult =
       confidence: string | null;
       note: string | null;
     }
-  | { success: false; error: string; rawResponse: string | null };
+  | { success: false; error: string; note: string | null; rawResponse: string | null };
 
 export async function lookupExecutiveEmailAi(
   companyName: string,
@@ -42,13 +42,19 @@ export async function lookupExecutiveEmailAi(
   });
 
   if (!result.ok) {
-    return { success: false, error: result.error, rawResponse: result.rawResponse };
+    return {
+      success: false,
+      error: result.error,
+      note: result.note ?? null,
+      rawResponse: result.rawResponse,
+    };
   }
 
   if (!result.email) {
     return {
       success: false,
-      error: result.note ?? `AI could not find a ${role.toUpperCase()} email for this company.`,
+      error: `AI could not find a ${role.toUpperCase()} email for this company.`,
+      note: result.note,
       rawResponse: result.rawResponse,
     };
   }
@@ -57,6 +63,7 @@ export async function lookupExecutiveEmailAi(
     return {
       success: false,
       error: "AI returned an implausible email. Verify manually before sending.",
+      note: result.note,
       rawResponse: result.rawResponse,
     };
   }

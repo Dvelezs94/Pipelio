@@ -29,7 +29,11 @@ export function EmailResearchPanel({
   const [result, setResult] = useState<EmailResearchResult | null>(null);
   const [aiResults, setAiResults] = useState<AiLookupState>({});
   const [error, setError] = useState<string | null>(null);
-  const [aiError, setAiError] = useState<{ message: string; rawResponse: string | null } | null>(null);
+  const [aiError, setAiError] = useState<{
+    message: string;
+    note: string | null;
+    rawResponse: string | null;
+  } | null>(null);
 
   async function handleResearch() {
     if (!website?.trim()) {
@@ -59,10 +63,14 @@ export function EmailResearchPanel({
       if (data.success) {
         setAiResults((prev) => ({ ...prev, [role]: data }));
       } else {
-        setAiError({ message: data.error, rawResponse: data.rawResponse });
+        setAiError({ message: data.error, note: data.note, rawResponse: data.rawResponse });
       }
     } catch {
-      setAiError({ message: "AI lookup failed. Check DEEPSEEK_API_KEY in .env.", rawResponse: null });
+      setAiError({
+        message: "AI lookup failed. Check DEEPSEEK_API_KEY in .env.",
+        note: null,
+        rawResponse: null,
+      });
     } finally {
       setAiLoading(null);
     }
@@ -205,8 +213,28 @@ export function EmailResearchPanel({
           </Button>
         </div>
         {aiError && (
-          <div className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 p-2.5">
-            <p className="text-xs font-medium text-destructive">{aiError.message}</p>
+          <div
+            className={
+              aiError.note
+                ? "space-y-2 rounded-md border border-amber-300 bg-amber-50 p-2.5 dark:border-amber-500/40 dark:bg-amber-950/50"
+                : "space-y-2 rounded-md border border-destructive/40 bg-destructive/5 p-2.5"
+            }
+          >
+            <p
+              className={
+                aiError.note
+                  ? "text-xs font-medium text-amber-950 dark:text-amber-50"
+                  : "text-xs font-medium text-destructive"
+              }
+            >
+              {aiError.message}
+            </p>
+            {aiError.note && (
+              <p className="text-xs text-amber-900 dark:text-amber-100">
+                <span className="font-medium">Note: </span>
+                {aiError.note}
+              </p>
+            )}
             {aiError.rawResponse && (
               <div className="space-y-1">
                 <p className="text-[11px] font-medium text-foreground">Raw AI response</p>
