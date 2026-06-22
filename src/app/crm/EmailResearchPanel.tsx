@@ -236,12 +236,14 @@ export function EmailResearchPanel({
               </p>
             )}
             {aiError.rawResponse && (
-              <div className="space-y-1">
-                <p className="text-[11px] font-medium text-foreground">Raw AI response</p>
-                <pre className="text-[11px] font-mono text-foreground whitespace-pre-wrap break-all rounded border bg-background p-2 max-h-44 overflow-y-auto">
+              <details className="group">
+                <summary className="cursor-pointer text-[11px] font-medium text-muted-foreground hover:text-foreground list-none [&::-webkit-details-marker]:hidden">
+                  Show raw AI response
+                </summary>
+                <pre className="mt-1 text-[11px] font-mono text-foreground whitespace-pre-wrap break-all rounded border bg-background p-2 max-h-44 overflow-y-auto">
                   {aiError.rawResponse}
                 </pre>
-              </div>
+              </details>
             )}
           </div>
         )}
